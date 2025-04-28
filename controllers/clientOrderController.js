@@ -26,29 +26,26 @@ class ClientOrderController {
         offset
       });
       
-
       if (!clientOrders || clientOrders.length === 0)
         return res.status(200).json({ message: "No orders found" });
-
-      /*
-       * TODO: should add pagination
-       */
-
-      const size = clientOrders.length;
-      clientOrders.forEach((clientOrder) => {
-        clientOrder = {
-          ...clientOrder.toJSON(),
-          client: exclude(clientOrder.client, ["password"]),
-          artisan: exclude(clientOrder.artisan, ["password"]),
-        };
+      
+      const sanitizedOrders = clientOrders.map((clientOrder) => ({
+        ...clientOrder.toJSON(),
+        client: exclude(clientOrder.client, ["password"]),
+        artisan: exclude(clientOrder.artisan, ["password"]),
+      }));
+      
+      return res.status(200).json({ 
+        total_orders: count,
+        current_page: page,
+        per_page: limit,
+        orders: sanitizedOrders 
       });
-
-      return res.status(200).json({ total_orders: size, orders: clientOrders });
     } catch (err) {
       return next(err);
     }
   }
-
+  
   async createOrder(req, res, next) {
     try {
       const { artisanId, description, totalAmount } = req.body;

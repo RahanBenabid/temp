@@ -183,10 +183,10 @@ class ArtisanOrderController {
     try {
       const orderId = req.params.id;
       const { status } = req.body;
-
+      
       if (!orderId)
         return res.status(400).json({ message: "No order Id provided" });
-
+      
       if (
         !["PENDING", "SHIPPED", "DELIVERED", "CANCELLED"].includes(
           status?.toUpperCase(),
@@ -194,10 +194,10 @@ class ArtisanOrderController {
       ) {
         return res.status(400).json({ message: "Invalid status value" });
       }
-
+      
       const order = await ArtisanOrder.findByPk(orderId);
       if (!order) return res.status(404).json({ message: "Order not found" });
-
+      
       const result = await ArtisanOrder.update(
         { status: status },
         {
@@ -205,14 +205,18 @@ class ArtisanOrderController {
         },
       );
       
-      console.log("stinky", orderId, result, order)
-      
       if (!result || result[0] === 0)
         return res.status(404).json({
           message: "Order not found or no update performed",
         });
-
-      const updatedOrder = await ArtisanOrder.findByPk(orderId);
+      
+      const updatedOrder = await ArtisanOrder.findByPk(orderId, {
+        include: [
+          { model: User, as: "artisan" },
+          { model: User, as: "supplier" },
+          { model: User, as: "deliveryMan" },
+        ],
+      });
       
       const sanitizedOrder = {
         ...updatedOrder.toJSON(),
@@ -220,7 +224,7 @@ class ArtisanOrderController {
         supplier: exclude(updatedOrder.supplier, ["password"]),
         deliveryMan: exclude(updatedOrder.deliveryMan, ["password"]),
       };
-
+      
       return res.status(200).json({ order: sanitizedOrder });
     } catch (err) {
       return next(err);
