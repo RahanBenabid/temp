@@ -111,10 +111,6 @@ export default (sequelize, DataTypes) => {
       as: "artisanOrders",
     });
     User.hasMany(models.artisanOrder, {
-      foreignKey: "artisanId",
-      as: "artisanOwnOrders",
-    });
-    User.hasMany(models.artisanOrder, {
       foreignKey: "supplierId",
       as: "supplierOrders",
     });

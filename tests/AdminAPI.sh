@@ -106,3 +106,14 @@ curl -X PUT http://localhost:3000/clientOrders/$clientOrder_id/status \
 		"status": "ACCEPTED"
 	}'
 echo -e "\n"
+
+echo "Changing a ArtisanOrder status using a hardcoded id..."
+artisanOrder_id="36eb6cd5-eece-499a-9912-da3a5170a64f"
+
+curl -X PUT http://localhost:3000/artisanOrders/$artisanOrder_id/status \
+-H "Authorization: Bearer $token" \
+-H "Content-Type: application/json" \
+-d '{
+		"status": "SHIPPED"
+	}'
+echo -e "\n"

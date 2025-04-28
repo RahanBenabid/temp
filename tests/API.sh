@@ -155,7 +155,7 @@ response=$(curl -s -X POST http://localhost:3000/artisanOrders \
 		"deliveryAddress": "500"
 	}')
 echo $response
-artisanOrderId=$(echo "$response" | jq -r .id)
+artisanOrderId=$(echo "$response" | jq -r .order.id)
 echo -e "\n"
 
 echo "Getting the artisan order with the id $artisanOrderId"

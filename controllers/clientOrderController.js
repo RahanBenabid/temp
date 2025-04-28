@@ -13,12 +13,19 @@ const exclude = (user, fields) => {
 class ClientOrderController {
   async getAllOrders(req, res, next) {
     try {
-      const clientOrders = await ClientOrder.findAll({
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const offset = (page - 1) * limit;
+      
+      const { count, rows: clientOrders } = await ClientOrder.findAndCountAll({
         include: [
           { model: User, as: "client" },
-          { model: User, as: "artisan" },
+          { model: User, as: "artisan" }
         ],
+        limit,
+        offset
       });
+      
 
       if (!clientOrders || clientOrders.length === 0)
         return res.status(200).json({ message: "No orders found" });
@@ -172,10 +179,6 @@ class ClientOrderController {
       return next(err);
     }
   }
-
-  /*
-   * TODO: CHANGE THE ORDER STATUS (admin only)
-   */
 
   async changeOrderStatusById(req, res, next) {
     try {
