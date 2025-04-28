@@ -51,3 +51,39 @@ export const isAdmin = (req, res, next) => {
   }
   next();
 };
+
+export const isClient = (req, res, next) => {
+  if (req.user.role === "CLIENT" || req.user.role === "ADMIN") {
+    return next();
+  }
+  return res
+    .status(403)
+    .json({ message: "Access denied: Client role required" });
+};
+
+export const isArtisan = (req, res, next) => {
+  if (req.user.role === "ARTISAN" || req.user.role === "ADMIN") {
+    return next();
+  }
+  return res
+  .status(403)
+  .json({ message: "Access denied: Artisan role required" });
+};
+
+export const isSupplier = (req, res, next) => {
+  if (req.user.role === "SUPPLIER" || req.user.role === "ADMIN") {
+    return next();
+  }
+  return res
+  .status(403)
+  .json({ message: "Access denied: Supplier role required" });
+};
+
+export const isDeliveryMan = (req, res, next) => {
+  if (req.user.role === "DELIVERY_MAN" || req.user.role === "ADMIN") {
+    return next();
+  }
+  return res
+  .status(403)
+  .json({ message: "Access denied: Delivery Man role required" });
+};
