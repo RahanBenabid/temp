@@ -102,7 +102,7 @@ response=$(curl -s -X POST http://localhost:3000/clientOrders \
 	}')
 echo -e
 echo $response
-order_id=$(echo $response | jq -r '.id')
+order_id=$(echo $response | jq -r '.order.id')
 echo -e "\n"
 
 echo "Getting all client orders"
@@ -178,19 +178,19 @@ echo -e "\n"
 
 # DELETION -------------------------------------------------------------
 
-echo -e "${YELLOW}DELETION${RESET}"
-
-echo "Deleting the client order with the id $order_id"
-response_code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE http://localhost:3000/clientOrders/$order_id --header "Authorization: Bearer $token")
-echo -e "Response Code: ${YELLOW}$response_code${RESET}"
-echo -e "\n"
-
-echo "Deleting the artisan order with the id $artisanOrderId"
-response_code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE http://localhost:3000/artisanOrders/$artisanOrderId --header "Authorization: Bearer $artisanToken")
-echo -e "Response Code: ${YELLOW}$response_code${RESET}"
-echo -e "\n"
-
-echo "Deleting the user with the id $user_id"
-response_code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE http://localhost:3000/users/$user_id --header "Authorization: Bearer $token")
-echo -e "Response Code: ${YELLOW}$response_code${RESET}"
-echo -e "\n"
+#echo -e "${YELLOW}DELETION${RESET}"
+#
+#echo "Deleting the client order with the id $order_id"
+#response_code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE http://localhost:3000/clientOrders/$order_id --header "Authorization: Bearer $token")
+#echo -e "Response Code: ${YELLOW}$response_code${RESET}"
+#echo -e "\n"
+#
+#echo "Deleting the artisan order with the id $artisanOrderId"
+#response_code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE http://localhost:3000/artisanOrders/$artisanOrderId --header "Authorization: Bearer $artisanToken")
+#echo -e "Response Code: ${YELLOW}$response_code${RESET}"
+#echo -e "\n"
+#
+#echo "Deleting the user with the id $user_id"
+#response_code=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE http://localhost:3000/users/$user_id --header "Authorization: Bearer $token")
+#echo -e "Response Code: ${YELLOW}$response_code${RESET}"
+#echo -e "\n"

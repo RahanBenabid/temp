@@ -36,7 +36,7 @@ class ClientOrderController {
         };
       });
 
-      return res.status(200).json({ total_orders: size, clientOrders });
+      return res.status(200).json({ total_orders: size, orders: clientOrders });
     } catch (err) {
       return next(err);
     }
@@ -91,7 +91,7 @@ class ClientOrderController {
         artisan: exclude(order.artisan, ["password"]),
       };
 
-      return res.status(201).json(sanitizedOrder);
+      return res.status(201).json({ order: sanitizedOrder });
     } catch (err) {
       return next(err);
     }
@@ -104,7 +104,7 @@ class ClientOrderController {
         return res.status(400).json({ message: "No query provided" });
 
       /*
-       * TODO: make sure it's only the orders of the user
+       * TODO: make sure it's only the orders of the user, or if the user is admin?
        */
 
       const order = await ClientOrder.findOne({
@@ -123,7 +123,7 @@ class ClientOrderController {
         artisan: exclude(order.artisan, ["password"]),
       };
 
-      return res.status(200).json(sanitizedOrder);
+      return res.status(200).json({ order: sanitizedOrder });
     } catch (err) {
       return next(err);
     }
@@ -147,7 +147,6 @@ class ClientOrderController {
 
       const result = await ClientOrder.update(orderData, {
         where: { id: orderId },
-        returning: true,
       });
 
       if (!result || result[0] === 0)
@@ -168,15 +167,60 @@ class ClientOrderController {
         artisan: exclude(updatedOrder.artisan, ["password"]),
       };
 
-      return res.status(200).json(sanitizedOrder);
+      return res.status(200).json({ order: sanitizedOrder });
     } catch (err) {
       return next(err);
     }
   }
 
   /*
-   * TODO: CHANGE THE ORDER STATUS
+   * TODO: CHANGE THE ORDER STATUS (admin only)
    */
+
+  async changeOrderStatusById(req, res, next) {
+    try {
+      const orderId = req.params.id;
+      const { status } = req.body;
+
+      if (!orderId)
+        return res.status(400).json({ message: "No order Id provided" });
+
+      if (
+        !["PENDING", "ACCEPTED", "COMPLETED", "CANCELLED"].includes(
+          status?.toUpperCase(),
+        )
+      )
+      {
+        return res.status(400).json({ message: "Invalid status value" });
+      }
+
+      const order = await ClientOrder.findByPk(orderId);
+      if (!order) return res.status(404).json({ message: "Order not found" });
+
+      const result = await ClientOrder.update(
+        { status: status },
+        {
+          where: { id: orderId },
+        },
+      );
+
+      if (!result || result[0] === 0)
+        return res.status(404).json({
+          message: "Order not found or no update performed",
+        });
+
+      const updatedOrder = await ClientOrder.findByPk(orderId);
+      const sanitizedOrder = {
+        ...updatedOrder.toJSON(),
+        client: exclude(updatedOrder.client, ["password"]),
+        artisan: exclude(updatedOrder.artisan, ["password"]),
+      };
+
+      return res.status(200).json({ order: sanitizedOrder });
+    } catch (err) {
+      return next(err);
+    }
+  }
 
   async deleteOrderById(req, res, next) {
     try {

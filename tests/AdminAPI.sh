@@ -31,8 +31,8 @@ echo -e "\n"
 
 # SEED THE DATABASE -------------------------------------
 
-cd ../
-npx sequelize db:seed:all
+#cd ../
+#npx sequelize db:seed:all
 
 # ADMIN TEST -----------------------------------------------
 
@@ -62,6 +62,7 @@ curl -X POST http://localhost:3000/users \
 		"nationalCardNumber": "05964275867113459678",
 		"vehicle": "CAR"
 	}'
+echo -e "\n"
 		
 echo "Creating an artisan as an admin"
 curl -X POST http://localhost:3000/users \
@@ -93,4 +94,15 @@ curl -X POST http://localhost:3000/users \
 		"shopAddress": "123 Market Street",
 		"inventory": "Wood, Nails, Tools"
 	}'
-		echo -e "\n"
+echo -e "\n"
+
+echo "Changing a ClientOrder status using a hardcoded id..."
+clientOrder_id="de7e93bc-f87f-48a1-9faa-e5a4b7bd25da"
+
+curl -X PUT http://localhost:3000/clientOrders/$clientOrder_id/status \
+	-H "Authorization: Bearer $token" \
+	-H "Content-Type: application/json" \
+	-d '{
+		"status": "ACCEPTED"
+	}'
+echo -e "\n"

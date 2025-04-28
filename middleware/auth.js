@@ -44,3 +44,10 @@ export const restrictToAdminForSpecialRoles = (req, res, next) => {
     next();
   });
 };
+
+export const isAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== "ADMIN") {
+    return res.status(403).send("Admin verification failed");
+  }
+  next();
+};

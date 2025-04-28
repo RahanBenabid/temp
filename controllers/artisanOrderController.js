@@ -28,17 +28,17 @@ class ArtisanOrderController {
        * TODO: should add pagination here too
        */
 
-      artisanOrders.forEach((artisanOrder) => {
-        artisanOrder = {
-          ...artisanOrders.toJSON(),
-          artisan: exclude(artisanOrder.artisan, ["password"]),
-          supplier: exclude(artisanOrder.supplier, ["password"]),
-          artisan: exclude(artisanOrder.deliveryMan, ["password"]),
-        };
-      });
+      const sanitizedOrders = artisanOrders.map((artisanOrder) => ({
+        ...artisanOrder.toJSON(),
+        artisan: exclude(artisanOrder.artisan, ["password"]),
+        supplier: exclude(artisanOrder.supplier, ["password"]),
+        deliveryMan: exclude(artisanOrder.deliveryMan, ["password"]),
+      }));
 
-      const size = client.length;
-      res.status(200).json({ total_orders: size, artisanOrders });
+      const size = sanitizedOrders.length;
+      res
+        .status(200)
+        .json({ total_orders: size, artisanOrders: sanitizedOrders });
     } catch (err) {
       return next(err);
     }
@@ -66,11 +66,9 @@ class ArtisanOrderController {
       const artisanId = req.user.userId;
 
       if (req.user.role !== "ARTISAN" && req.user.role !== "ADMIN")
-        return res
-          .status(403)
-          .json({
-            message: "Only Artisans or admins can create artisan orders",
-          });
+        return res.status(403).json({
+          message: "Only Artisans or admins can create artisan orders",
+        });
 
       const orderData = {
         artisanId,
@@ -153,7 +151,6 @@ class ArtisanOrderController {
 
       const result = await ArtisanOrder.update(orderData, {
         where: { id: orderId },
-        returning: true,
       });
 
       if (!result || result[0] === 0)
@@ -196,9 +193,9 @@ class ArtisanOrderController {
       if (!orderExists)
         return res.status(404).json({ message: "Order not found" });
 
-      ArtisanOrder.destroy({ where: { id: orderId } });
+      await ArtisanOrder.destroy({ where: { id: orderId } });
       return res.sendStatus(204);
-    } catch {
+    } catch (err) {
       return next(err);
     }
   }

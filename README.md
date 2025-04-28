@@ -143,4 +143,3 @@ git push origin backend
 
 Now you’re ready to develop the backend without errors! 🚀
 
-# temp

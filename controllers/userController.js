@@ -194,7 +194,6 @@ class UserController {
 
       const result = await User.update(data, {
         where: { id: userId },
-        returning: true,
       });
 
       if (!result || result[0] === 0)
@@ -251,7 +250,7 @@ class UserController {
         return res.status(404).json({ message: "User not found" });
 
       await User.destroy({ where: { id: userId } });
-      return res.sendStatus(204);
+      return res.status(204).send();
     } catch (err) {
       return next(err);
     }
