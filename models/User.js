@@ -1,5 +1,4 @@
 import bcrypt from "bcrypt";
-import { UUIDV4 } from "sequelize";
 
 export default (sequelize, DataTypes) => {
   const User = sequelize.define(
@@ -7,7 +6,7 @@ export default (sequelize, DataTypes) => {
     {
       id: {
         type: DataTypes.UUID,
-        defaultValue: UUIDV4,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
       firstname: {
@@ -52,6 +51,14 @@ export default (sequelize, DataTypes) => {
         ),
         defaultValue: "CLIENT",
         allowNull: false,
+      },
+      averageRating: {
+        type: DataTypes.FLOAT,
+        defaultValue: 0,
+        validate: {
+          min: 0,
+          max: 5,
+        },
       },
     },
     {

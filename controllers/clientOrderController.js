@@ -2,6 +2,7 @@ import db from "./../models/index.js";
 
 const ClientOrder = db.clientOrder;
 const User = db.user;
+const Rating = db.rating;
 
 const exclude = (user, fields) => {
   if (!user) return null;
@@ -16,36 +17,36 @@ class ClientOrderController {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       const offset = (page - 1) * limit;
-      
+
       const { count, rows: clientOrders } = await ClientOrder.findAndCountAll({
         include: [
           { model: User, as: "client" },
-          { model: User, as: "artisan" }
+          { model: User, as: "artisan" },
         ],
         limit,
-        offset
+        offset,
       });
-      
+
       if (!clientOrders || clientOrders.length === 0)
         return res.status(200).json({ message: "No orders found" });
-      
+
       const sanitizedOrders = clientOrders.map((clientOrder) => ({
         ...clientOrder.toJSON(),
         client: exclude(clientOrder.client, ["password"]),
         artisan: exclude(clientOrder.artisan, ["password"]),
       }));
-      
-      return res.status(200).json({ 
+
+      return res.status(200).json({
         total_orders: count,
         current_page: page,
         per_page: limit,
-        orders: sanitizedOrders 
+        orders: sanitizedOrders,
       });
     } catch (err) {
       return next(err);
     }
   }
-  
+
   async createOrder(req, res, next) {
     try {
       const { artisanId, description, totalAmount } = req.body;
@@ -189,8 +190,7 @@ class ClientOrderController {
         !["PENDING", "ACCEPTED", "COMPLETED", "CANCELLED"].includes(
           status?.toUpperCase(),
         )
-      )
-      {
+      ) {
         return res.status(400).json({ message: "Invalid status value" });
       }
 
@@ -233,6 +233,43 @@ class ClientOrderController {
 
       await ClientOrder.destroy({ where: { id: orderId } });
       return res.sendStatus(204);
+    } catch (err) {
+      return next(err);
+    }
+  }
+
+  async getOrderWithRatings(req, res, next) {
+    try {
+      const orderId = req.params.id;
+      if (!orderId)
+        return res.status(400).json({ message: "order ID is required " });
+
+      const order = await ClientOrder.findOne({
+        where: { id: orderId },
+        include: [
+          { model: User, as: "client" },
+          { model: User, as: "artisan" },
+        ],
+      });
+
+      if (!order) return res.status(404).json({ message: "order not found" });
+
+      const ratings = await Rating.findAll({
+        where: { orderId, orderType: "CLIENT_ORDER" },
+        include: [
+          { model: User, as: "rater", attributes: { exclude: ["password"] } },
+          { model: User, as: "ratee", attributes: { exclude: ["password"] } },
+        ],
+      });
+
+      const sanitizedOrder = {
+        ...order.toJSON(),
+        client: exclude(order.client, ["password"]),
+        artisan: exclude(order.artisan, ["password"]),
+        ratings: ratings,
+      };
+
+      return res.status(200).json({ order: sanitizedOrder });
     } catch (err) {
       return next(err);
     }

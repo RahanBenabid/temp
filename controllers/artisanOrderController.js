@@ -247,6 +247,44 @@ class ArtisanOrderController {
       return next(err);
     }
   }
+  
+  async getOrderWithRatings(req, res, next) {
+    try {
+      const orderId = req.params.id;
+      if (!orderId)
+        return res.status(400).json({ message: "Order ID is required" });
+      
+      const order = await ArtisanOrder.findOne({
+        where: { id: orderId },
+        include: [
+          { model: User, as: "artisan" },
+          { model: User, as: "supplier" },
+          { model: User, as: "deliveryMan" },
+        ],
+      });
+      
+      if (!order) return res.status(404).json({ message: "Order not found" });
+      
+      const ratings = await db.rating.findAll({
+        where: { orderId, orderType: "ARTISAN_ORDER" },
+        include: [
+          { model: User, as: "rater", attributes: { exclude: ["password"] } },
+          { model: User, as: "ratee", attributes: { exclude: ["password"] } }
+        ]
+      });
+      
+      const sanitizedOrder = {
+        ...order.toJSON(),
+        artisan: exclude(order.artisan, ["password"]),
+        supplier: exclude(order.supplier, ["password"]),
+        deliveryMan: exclude(order.deliveryMan, ["password"]),
+        ratings: ratings
+      };
+      
+      return res.status(200).json({ order: sanitizedOrder });
+    } catch (err) {
+      return next(err);
+    }
 }
 
 export default new ArtisanOrderController();

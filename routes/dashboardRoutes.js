@@ -1,7 +1,7 @@
 // routes/dashboardRoutes.js
 import express from "express";
-import DashboardController from "../controllers/dashboardController.js";
-import { authenticate } from "../config/jwtConfig.js";
+import { DashboardController } from "./../controllers/index.js";
+import { authenticate } from "./../config/jwtConfig.js";
 import { isClient, isArtisan, isSupplier, isDeliveryMan, isAdmin } from "../middleware/auth.js";
 
 const router = express.Router();

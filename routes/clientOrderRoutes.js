@@ -8,9 +8,11 @@ const router = express.Router();
 // PROTECTED ROUTES
 router.get("/", authenticate, ClientOrderController.getAllOrders);
 router.get("/:id", authenticate, ClientOrderController.getOrderById);
+outer.get("/:id/ratings", authenticate, ClientOrderController.getOrderWithRatings);
 router.post("/", authenticate, ClientOrderController.createOrder);
 router.put("/:id/status",authenticate, isAdmin, ClientOrderController.changeOrderStatusById);
 router.put("/:id", authenticate, ClientOrderController.updateOrderById);
 router.delete("/:id", authenticate, ClientOrderController.deleteOrderById);
 
 export default router;
+	

@@ -4,6 +4,7 @@ import { Op } from "sequelize";
 const User = db.user;
 const ClientOrder = db.clientOrder;
 const ArtisanOrder = db.artisanOrder;
+const Rating = db.rating;
 
 class DashboardController {
   async getClientDashboard(req, res, next) {
@@ -29,6 +30,19 @@ class DashboardController {
         ],
       });
 
+      const topRatedArtisans = await User.findAll({
+        where: {
+          role: "ARISAN",
+          averageRating: { [Op.gt]: 0 },
+        },
+        attributes: {
+          exclude: ["password"],
+          include: ["averageRating"],
+        },
+        order: [["averageRating", "DESC"]],
+        limit: 5,
+      });
+
       /*
        * TODO: add saved artisans later when i implement that feature
        */
@@ -36,6 +50,7 @@ class DashboardController {
       return res.status(200).json({
         recent_orders: orders,
         pending_requests: pendingOrders,
+        top_rated_artisans: topRatedArtisans,
       });
     } catch (err) {
       return next(err);
@@ -90,10 +105,35 @@ class DashboardController {
       const completionRate =
         totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0;
 
+      const ratingReceived = Rating.findAll({
+        where: { rateeId: userId },
+        include: [
+          { model: User, as: "rater", attributes: { exclude: ["password"] } },
+        ],
+        limit: 5,
+        order: [["createdAt", "DESC"]],
+      });
+
+      const ratingsStats = await Rating.findAll({
+        where: { rateeId: userId },
+        attributes: [
+          [db.sequelize.fn("AVG", db.sequelize.col("score")), "average"],
+          [db.sequelize.fn("COUNT", db.sequelize.col("id")), "count"],
+        ],
+      });
+
+      const averageRating = ratingsStats[0].dataValies.average || 0;
+      const ratingCount = ratingsStat[0].dataValues.count || 0;
+
       return res.status(200).json({
         client_requests: clientOrders,
         supply_orders: supplyOrders,
         completion_rate: completionRate.toFixed(2),
+        recent_ratings: ratingReceived,
+        rating_summary: {
+          average: parseFloat(averageRating.toFixed(2)),
+          count: ratingCount,
+        },
       });
     } catch (err) {
       return next(err);
@@ -206,12 +246,24 @@ class DashboardController {
         limit: 5,
       });
 
+      // top rated users
+      const topRatedUsers = await User.findAll({
+        where: { averageRating: { [Op.gt]: 0 } },
+        attributes: {
+          exclude: ["password"],
+          include: ["averageRating", "role"],
+        },
+        order: [["averageRating", "DESC"]],
+        limit: 10,
+      });
+
       return res.status(200).json({
         user_stats: userCounts,
         client_order_stats: clientOrderCounts,
         artisan_order_stats: artisanOrderCounts,
         recent_users: recentUsers,
         recent_orders: recentClientOrders,
+        top_rated_users: topRatedUsers,
       });
     } catch (err) {
       return next(err);
