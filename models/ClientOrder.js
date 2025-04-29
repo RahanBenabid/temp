@@ -29,6 +29,10 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: true,
       },
+      paymentStatus: {
+        type: DataTypes.ENUM("PENDING", "PARTIAL", "COMPLETED"),
+        defaultValue: "PENDING",
+      },
     },
     {
       timestamps: true,
@@ -44,6 +48,9 @@ export default (sequelize, DataTypes) => {
       foreignKey: "artisanId",
       as: "artisan",
     });
+
+    ClientOrder.hasMany(models.orderStatusHistory, { foreignKey: "orderId" });
+    ClientOrder.hasMany(models.payment, { foreignKey: "orderId" });
   };
 
   return ClientOrder;

@@ -274,6 +274,51 @@ class ClientOrderController {
       return next(err);
     }
   }
+  
+  async getOrderStatus (req, res, next) {
+    try {
+      const { orderId } = req.params;
+      
+      const order = await ClientOrder.findByPk(orderId, {
+        include: [
+          {
+            model: OrderStatusHistory,
+            order: [['createdAt', 'ASC']]
+          },
+          {
+            model: Service,
+            include: [{
+              model: User,
+              as: 'artisan',
+              attributes: ['id', 'name', 'email']
+            }]
+          }
+        ]
+      });
+      
+      if (!order)
+        return res.status(404).json({ message: 'Order not found' });
+      
+      const allStatuses = ['CREATED', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED'];
+      
+      const statusTimeline = allStatuses.map(status => {
+        const statusHistory = order.OrderStatusHistories.find(h => h.status === status);
+        return {
+          status,
+          date: statusHistory ? statusHistory.createdAt : null,
+          comment: statusHistory ? statusHistory.comment : null,
+          completed: !!statusHistory
+        };
+      });
+      
+      return res.status(200).json({
+        order,
+        statusTimeline
+      });
+    } catch (error) {
+      return next(err);
+    }
+  };
 }
 
 export default new ClientOrderController();
