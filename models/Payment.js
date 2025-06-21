@@ -9,7 +9,7 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       allowNull: false,
       references: {
-        model: "clientOrder",
+        model: "clientOrders",
         key: "id",
       },
     },

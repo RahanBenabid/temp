@@ -32,7 +32,7 @@ class DashboardController {
 
       const topRatedArtisans = await User.findAll({
         where: {
-          role: "ARISAN",
+          role: "ARTISAN",
           averageRating: { [Op.gt]: 0 },
         },
         attributes: {
@@ -61,7 +61,7 @@ class DashboardController {
     try {
       const userId = req.user.userId;
 
-      const clientOrders = await clientOrders.findAll({
+      const clientOrders = await ClientOrder.findAll({
         where: { artisanId: userId },
         include: [
           { model: User, as: "client", attributes: { exclude: ["password"] } },
@@ -105,7 +105,7 @@ class DashboardController {
       const completionRate =
         totalOrders > 0 ? (completedOrders / totalOrders) * 100 : 0;
 
-      const ratingReceived = Rating.findAll({
+      const ratingReceived = await Rating.findAll({
         where: { rateeId: userId },
         include: [
           { model: User, as: "rater", attributes: { exclude: ["password"] } },
@@ -122,8 +122,8 @@ class DashboardController {
         ],
       });
 
-      const averageRating = ratingsStats[0].dataValies.average || 0;
-      const ratingCount = ratingsStat[0].dataValues.count || 0;
+      const averageRating = ratingsStats[0].dataValues.average || 0;
+      const ratingCount = ratingsStats[0].dataValues.count || 0;
 
       return res.status(200).json({
         client_requests: clientOrders,

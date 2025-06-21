@@ -44,13 +44,18 @@ export default (sequelize, DataTypes) => {
       foreignKey: "clientId",
       as: "client",
     });
+    
     ClientOrder.belongsTo(models.user, {
       foreignKey: "artisanId",
       as: "artisan",
     });
 
-    ClientOrder.hasMany(models.orderStatusHistory, { foreignKey: "orderId" });
-    ClientOrder.hasMany(models.payment, { foreignKey: "orderId" });
+    ClientOrder.hasMany(models.orderStatusHistory, {
+      foreignKey: "orderId",
+      as: "orderStatusHistory",
+    });
+    
+    // ClientOrder.hasMany(models.payment, { foreignKey: "orderId" });
   };
 
   return ClientOrder;

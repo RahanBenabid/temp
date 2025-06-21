@@ -6,23 +6,30 @@ const ClientOrder = db.clientOrder;
 
 class PaymentController {
   async recordPayment(req, res, next) {
+    const transaction = await db.sequelize.transaction();
+
     try {
       const { orderId } = req.params;
       const { amount, paymentMethod, notes } = req.body;
 
-      const order = await ClientOrder.findByPk(orderId);
-      if (!order) return res.status(404).json({ message: "order not found" });
+      const order = await ClientOrder.findByPk(orderId, { transaction });
+      if (!order) {
+        await transaction.rollback();
+        return res.status(404).json({ message: "order not found" });
+      }
 
-      // generating a receipt number number
-      const receiptNumber = `RCPT-${Date.now()}-${Math.floor(Math.floor(Math.random() * 1000))}`;
+      const receiptNumber = `RCPT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-      const payment = await Payment.create({
-        orderId,
-        amount,
-        paymentMethod,
-        notes,
-        receiptNumber,
-      });
+      const payment = await Payment.create(
+        {
+          orderId,
+          amount,
+          paymentMethod,
+          notes,
+          receiptNumber,
+        },
+        { transaction },
+      );
 
       const payments = await Payment.findAll({
         where: { orderId },
@@ -30,6 +37,7 @@ class PaymentController {
           [sequelize.fn("SUM", sequelize.col("amount")), "totalPaid"],
         ],
         raw: true,
+        transaction,
       });
 
       const totalPaid = parseFloat(payments[0].totalPaid);
@@ -39,19 +47,24 @@ class PaymentController {
           : totalPaid > 0
             ? "PARTIAL"
             : "PENDING";
-            
-      await order.update({ paymentStatus });
-      
+
+      await order.update({ paymentStatus }, { transaction });
+
+      await transaction.commit();
+
       return res.status(201).json({
-        message: 'Payment recorded successfully',
+        message: "Payment recorded successfully",
         payment,
         paymentStatus,
         totalPaid,
-        remainingBalance: order.totalAmount - totalPaid
+        remainingBalance: order.totalAmount - totalPaid,
       });
     } catch (err) {
-      console.error('Error recording payment:', error);
-      return res.status(500).json({ message: 'Server error', error: error.message });
+      await transaction.rollback();
+      console.error("Error recording payment:", err);
+      return res
+        .status(500)
+        .json({ message: "Server error", error: err.message });
     }
   }
 }

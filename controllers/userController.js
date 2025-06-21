@@ -176,7 +176,7 @@ class UserController {
       if (!userId)
         return res.status(400).json({ message: "User ID not provided" });
 
-      if (req.user.userId !== userId && req.role !== "ADMIN")
+      if (req.user.userId !== userId && req.user.role !== "ADMIN")
         return res.status(403).json({ message: "Unauthorized" });
 
       const { firstname, lastname, email, phone, password } = req.body;
@@ -242,7 +242,7 @@ class UserController {
       if (!userId)
         return res.status(400).json({ message: "No user ID provided" });
 
-      if (req.user.userId !== userId && req.role !== "ADMIN")
+      if (req.user.userId !== userId && req.user.role !== "ADMIN")
         return res.status(403).json({ message: "Unauthorized" });
 
       const userExists = await User.findByPk(userId);

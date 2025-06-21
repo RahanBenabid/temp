@@ -3,6 +3,8 @@ import db from "./../models/index.js";
 const ClientOrder = db.clientOrder;
 const User = db.user;
 const Rating = db.rating;
+const OrderStatusHistory = db.orderStatusHistory;
+const Service = db.service;
 
 const exclude = (user, fields) => {
   if (!user) return null;
@@ -83,7 +85,6 @@ class ClientOrderController {
       const createdOrder = await ClientOrder.create(orderData);
 
       const order = await createdOrder.reload({
-        where: { id: createdOrder.id },
         include: [
           { model: User, as: "client" },
           { model: User, as: "artisan" },
@@ -188,28 +189,31 @@ class ClientOrderController {
 
       if (
         !["PENDING", "ACCEPTED", "COMPLETED", "CANCELLED"].includes(
-          status?.toUpperCase(),
+          status?.toUpperCase()
         )
-      ) {
+      )
         return res.status(400).json({ message: "Invalid status value" });
-      }
 
       const order = await ClientOrder.findByPk(orderId);
       if (!order) return res.status(404).json({ message: "Order not found" });
 
       const result = await ClientOrder.update(
         { status: status },
-        {
-          where: { id: orderId },
-        },
+        { where: { id: orderId } }
       );
 
       if (!result || result[0] === 0)
-        return res.status(404).json({
-          message: "Order not found or no update performed",
-        });
+        return res
+          .status(404)
+          .json({ message: "Order not found or no update performed" });
 
-      const updatedOrder = await ClientOrder.findByPk(orderId);
+      const updatedOrder = await ClientOrder.findByPk(orderId, {
+        include: [
+          { model: User, as: "client" },
+          { model: User, as: "artisan" },
+        ],
+      });
+
       const sanitizedOrder = {
         ...updatedOrder.toJSON(),
         client: exclude(updatedOrder.client, ["password"]),
@@ -274,51 +278,55 @@ class ClientOrderController {
       return next(err);
     }
   }
-  
-  async getOrderStatus (req, res, next) {
+
+  async getOrderStatus(req, res, next) {
     try {
-      const { orderId } = req.params;
-      
+      const orderId = req.params.id;
+
       const order = await ClientOrder.findByPk(orderId, {
         include: [
           {
             model: OrderStatusHistory,
-            order: [['createdAt', 'ASC']]
+            as: "orderStatusHistories",
+            order: [["createdAt", "ASC"]],
           },
           {
             model: Service,
-            include: [{
-              model: User,
-              as: 'artisan',
-              attributes: ['id', 'name', 'email']
-            }]
-          }
-        ]
+            include: [
+              {
+                model: User,
+                as: "artisan",
+                attributes: ["id", "name", "email"],
+              },
+            ],
+          },
+        ],
       });
-      
-      if (!order)
-        return res.status(404).json({ message: 'Order not found' });
-      
-      const allStatuses = ['CREATED', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED'];
-      
-      const statusTimeline = allStatuses.map(status => {
-        const statusHistory = order.OrderStatusHistories.find(h => h.status === status);
+
+      if (!order) return res.status(404).json({ message: "Order not found" });
+
+      const allStatuses = ["CREATED", "ACCEPTED", "IN_PROGRESS", "COMPLETED"];
+
+      const statusTimeline = allStatuses.map((status) => {
+        const statusHistory = order.orderStatusHistories?.find(
+          (h) => h.status === status
+        );
         return {
           status,
           date: statusHistory ? statusHistory.createdAt : null,
           comment: statusHistory ? statusHistory.comment : null,
-          completed: !!statusHistory
+          completed: !!statusHistory,
         };
       });
-      
+
       return res.status(200).json({
         order,
-        statusTimeline
+        statusTimeline,
       });
-    } catch (error) {
+    } catch (err) {
       return next(err);
     }
-  };
+  }
 }
 
 export default new ClientOrderController();

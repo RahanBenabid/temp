@@ -24,6 +24,5 @@ export default (sequelize, DataTypes) => {
     });
   };
 
-  console.log("ArtisanProfile model loaded");
   return ArtisanProfile;
 };

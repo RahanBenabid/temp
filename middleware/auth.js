@@ -142,11 +142,9 @@ export const canRateUser = async (req, res, next) => {
         .json({ message: "you can only rate after finishing the order" });
 
     if (!validRelationship)
-      return res
-        .status(403)
-        .json({
-          message: "you are not authorized to rate this user for this order",
-        });
+      return res.status(403).json({
+        message: "you are not authorized to rate this user for this order",
+      });
 
     const existingRating = await db.rating.findOne({
       where: {
@@ -161,7 +159,7 @@ export const canRateUser = async (req, res, next) => {
       return res.status(409).json({
         message: "you have already rated this order",
       });
-    
+
     next();
     orderCompleted = order.status === "DELIVERED";
   } catch (err) {

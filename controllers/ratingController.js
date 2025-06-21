@@ -92,7 +92,7 @@ class RatingController {
           message: "You can only rate after the order us completed/delivered",
         });
 
-      const existingRating = await Rating.fondOne({
+      const existingRating = await Rating.findOne({
         where: {
           raterId,
           rateeId,
@@ -158,7 +158,7 @@ class RatingController {
 
       await Rating.update(updateData, { where: { id: ratingId } });
 
-      this.updateUserAverage(rating.rateeId);
+      this.updateUserAverageRating(rating.rateeId);
 
       const updateRating = await Rating.findByPk(ratingId, {
         include: [
@@ -178,8 +178,12 @@ class RatingController {
       const ratingId = req.params.id;
       const userId = req.user.userId;
 
-      if (ratingId)
-        return res.status(404).json({ message: "Rating not found" });
+      if (!ratingId)
+        return res.status(400).json({ message: "Rating ID is required" });
+
+      const rating = await Rating.findByPk(ratingId);
+
+      if (!rating) return res.status(404).json({ message: "Rating not found" });
 
       const rateeId = rating.rateeId;
 
@@ -190,7 +194,7 @@ class RatingController {
 
       await Rating.destroy({ where: { id: ratingId } });
 
-      this.updateUserAverage(rateeId);
+      this.updateUserAverageRating(rateeId);
 
       return res.status(204).send();
     } catch (err) {
@@ -249,7 +253,7 @@ class RatingController {
         where: { rateeId: userId },
       });
 
-      if (rating.length === 0)
+      if (ratings.length === 0)
         return res.status(200).json({
           total_ratings: 0,
           average_rating: 0,
@@ -274,7 +278,7 @@ class RatingController {
       };
 
       ratings.forEach((rating) => {
-        distribution[ratings.score.toString()]++;
+        distribution[rating.score.toString()]++;
       });
 
       return res.status(200).json({
@@ -334,7 +338,13 @@ class RatingController {
       });
 
       // if no rating set average to 0
-      if (ratings.length === 0) return null;
+      if (ratings.length === 0) {
+        await User.update(
+          { averageRating: 0 }, // Explicitly update to 0 when no ratings exist
+          { where: { id: userId } },
+        );
+        return null;
+      }
 
       const totalScore = ratings.reduce((sum, rating) => sum + rating.score, 0);
       const averageRating = totalScore / ratings.length;

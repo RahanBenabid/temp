@@ -8,7 +8,7 @@ const router = express.Router();
 // PROTECTED ROUTES
 router.get("/", authenticate, ArtisanOrderController.getAllOrders);
 router.get("/:id", authenticate, ArtisanOrderController.getOrderById);
-outer.get("/:id/ratings", authenticate, ArtisanOrderController.getOrderWithRatings);
+router.get("/:id/ratings", authenticate, ArtisanOrderController.getOrderWithRatings);
 router.post("/", authenticate, ArtisanOrderController.createOrder);
 router.put("/:id/status", authenticate, isAdmin, ArtisanOrderController.changeOrderStatusById);
 router.put("/:id", authenticate, ArtisanOrderController.updateOrderById);

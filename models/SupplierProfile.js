@@ -15,14 +15,10 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      inventory: {
-        type: DataTypes.JSON,
-        allowNull: false,
-      },
     },
     {
       timestamps: false,
-    },
+    }
   );
 
   /* ASSOCIATIONS */
@@ -33,6 +29,5 @@ export default (sequelize, DataTypes) => {
     });
   };
 
-  console.log("SupplierProfile model loaded");
   return SupplierProfile;
 };

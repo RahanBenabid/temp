@@ -127,6 +127,5 @@ export default (sequelize, DataTypes) => {
     });
   };
 
-  console.log("User model loaded");
   return User;
 };

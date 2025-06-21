@@ -21,6 +21,5 @@ export default (sequelize, DataTypes) => {
     ClientProfile.belongsTo(models.user, { foreignKey: "user_id", as: "user" });
   };
 
-  console.log("ClientProfile model loaded");
   return ClientProfile;
 };

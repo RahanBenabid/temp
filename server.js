@@ -1,5 +1,4 @@
 import express from "express";
-
 import config from "./config/dotenv.js";
 import connectDB from "./config/dbConfig.js";
 import routes from "./routes/index.js";
@@ -12,6 +11,7 @@ const PORT = config.port;
 connectDB();
 
 // apply middlewares
+// middlewares(app);
 middlewares(app);
 
 // global route handler
@@ -23,7 +23,7 @@ app.use((req, res) => {
 });
 
 // Global Error Handler
-app.use((err, req, res, next) => {
+app.use((err, _req, res, _next) => {
   console.error(err.stack);
 
   // Default 500 error
@@ -36,6 +36,6 @@ app.use((err, req, res, next) => {
 });
 
 // start the server
-app.listen(PORT, () => {
-  console.log(`Server is live @ ${config.hostUrl}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("Server running on all interfaces:3000");
 });

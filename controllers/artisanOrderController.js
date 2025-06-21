@@ -36,9 +36,7 @@ class ArtisanOrderController {
       }));
 
       const size = sanitizedOrders.length;
-      res
-        .status(200)
-        .json({ total_orders: size, orders: sanitizedOrders });
+      res.status(200).json({ total_orders: size, orders: sanitizedOrders });
     } catch (err) {
       return next(err);
     }
@@ -104,7 +102,7 @@ class ArtisanOrderController {
     try {
       const orderId = req.params.id;
       if (!orderId)
-        return res.status(400).json({ message: "Requied Id missing" });
+        return res.status(400).json({ message: "Required Id missing" });
 
       const order = await ArtisanOrder.findOne({
         where: { id: orderId },
@@ -183,33 +181,33 @@ class ArtisanOrderController {
     try {
       const orderId = req.params.id;
       const { status } = req.body;
-      
+
       if (!orderId)
         return res.status(400).json({ message: "No order Id provided" });
-      
+
       if (
         !["PENDING", "SHIPPED", "DELIVERED", "CANCELLED"].includes(
-          status?.toUpperCase(),
+          status?.toUpperCase()
         )
       ) {
         return res.status(400).json({ message: "Invalid status value" });
       }
-      
+
       const order = await ArtisanOrder.findByPk(orderId);
       if (!order) return res.status(404).json({ message: "Order not found" });
-      
+
       const result = await ArtisanOrder.update(
         { status: status },
         {
           where: { id: orderId },
-        },
+        }
       );
-      
+
       if (!result || result[0] === 0)
         return res.status(404).json({
           message: "Order not found or no update performed",
         });
-      
+
       const updatedOrder = await ArtisanOrder.findByPk(orderId, {
         include: [
           { model: User, as: "artisan" },
@@ -217,14 +215,14 @@ class ArtisanOrderController {
           { model: User, as: "deliveryMan" },
         ],
       });
-      
+
       const sanitizedOrder = {
         ...updatedOrder.toJSON(),
         artisan: exclude(updatedOrder.artisan, ["password"]),
         supplier: exclude(updatedOrder.supplier, ["password"]),
         deliveryMan: exclude(updatedOrder.deliveryMan, ["password"]),
       };
-      
+
       return res.status(200).json({ order: sanitizedOrder });
     } catch (err) {
       return next(err);
@@ -247,13 +245,13 @@ class ArtisanOrderController {
       return next(err);
     }
   }
-  
+
   async getOrderWithRatings(req, res, next) {
     try {
       const orderId = req.params.id;
       if (!orderId)
         return res.status(400).json({ message: "Order ID is required" });
-      
+
       const order = await ArtisanOrder.findOne({
         where: { id: orderId },
         include: [
@@ -262,29 +260,69 @@ class ArtisanOrderController {
           { model: User, as: "deliveryMan" },
         ],
       });
-      
+
       if (!order) return res.status(404).json({ message: "Order not found" });
-      
+
       const ratings = await db.rating.findAll({
         where: { orderId, orderType: "ARTISAN_ORDER" },
         include: [
           { model: User, as: "rater", attributes: { exclude: ["password"] } },
-          { model: User, as: "ratee", attributes: { exclude: ["password"] } }
-        ]
+          { model: User, as: "ratee", attributes: { exclude: ["password"] } },
+        ],
       });
-      
+
       const sanitizedOrder = {
         ...order.toJSON(),
         artisan: exclude(order.artisan, ["password"]),
         supplier: exclude(order.supplier, ["password"]),
         deliveryMan: exclude(order.deliveryMan, ["password"]),
-        ratings: ratings
+        ratings: ratings,
       };
-      
+
       return res.status(200).json({ order: sanitizedOrder });
     } catch (err) {
       return next(err);
     }
+  }
+
+  async changeOrderStatusById(req, res, next) {
+    try {
+      const orderId = req.params.id;
+      const { status } = req.body;
+
+      if (!orderId)
+        return res.status(400).json({ message: "No order ID provided" });
+
+      if (
+        !["PENDING", "ACCEPTED", "COMPLETED", "CANCELED"].includes(
+          status?.toUpperCase()
+        )
+      )
+        return res.status(400).json({ message: "Invalid status value" });
+
+      const order = await ArtisanOrder.findByPk(orderId);
+      if (!order) return res.status(404).json({ message: "Order not found" });
+
+      const result = await ArtisanOrder.update(
+        { status: status },
+        { where: { id: orderId } }
+      );
+
+      if (!result || result[0] === 0)
+        return res
+          .status(404)
+          .json({ message: "Order not found or no update performed" });
+
+      const updatedOrder = await ArtisanOrder.findByPk(orderId, {
+        include: [
+          { model: User, as: "artisan" },
+          { model: User, as: "delivery" },
+        ],
+      });
+    } catch (err) {
+      return next(err);
+    }
+  }
 }
 
 export default new ArtisanOrderController();

@@ -32,6 +32,5 @@ export default (sequelize, DataTypes) => {
     });
   };
 
-  console.log("DeliveryManProfile model loaded");
   return DeliveryManProfile;
 };

@@ -3,29 +3,33 @@ import { v4 as uuidv4 } from "uuid";
 
 export const up = async (queryInterface) => {
   const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash("admin123", salt);
+  const hashedPassword = await bcrypt.hash("client123", salt);
+
+  const clientId = "9b5bb690-6339-4ef9-7777-91010431b96a";
 
   await queryInterface.bulkInsert(
     "users",
     [
       {
-        id: uuidv4(),
-        firstname: "Admin",
-        lastname: "User",
-        phone: "+213551234567",
-        email: "admin@mail.com",
+        id: clientId,
+        firstname: "Mohammed",
+        lastname: "Ahmed",
+        phone: "+213551239876",
+        email: "client@example.com",
         password: hashedPassword,
-        role: "ADMIN",
+        role: "CLIENT",
         createdAt: new Date(),
         updatedAt: new Date(),
       },
     ],
-    {},
+    {}
   );
+
+  return clientId;
 };
 
 export const down = async (queryInterface) => {
-  await queryInterface.bulkDelete("users", { email: "admin@example.com" }, {});
+  await queryInterface.bulkDelete("users", { email: "client@example.com" }, {});
 };
 
 /*

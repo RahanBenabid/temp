@@ -1,7 +1,7 @@
 import express from "express";
 import { RatingController } from "./../controllers/index.js";
 import { authenticate } from "./../config/jwtConfig.js";
-import { isAdmin, canRateUser } from "./../middleware/auth.js";
+import { isAdmin, canRateUser } from "./../middleware/auth.js";
 
 const router = express.Router();
 
