@@ -1,11 +1,12 @@
+import process from "node:process";
 import {
-  ValidationError,
   DatabaseError,
   TimeoutError,
   UniqueConstraintError,
+  ValidationError,
 } from "sequelize";
 
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, _req, res, _next) => {
   console.error(err);
 
   // sequelize errors
@@ -35,10 +36,9 @@ const errorHandler = (err, req, res, next) => {
     return res.status(500).json({
       success: false,
       message: "Database error",
-      error:
-        process.env.NODE_ENV === "development"
-          ? err.message
-          : "Internal server error",
+      error: process.env.NODE_ENV === "development"
+        ? err.message
+        : "Internal server error",
     });
   }
 
@@ -54,10 +54,9 @@ const errorHandler = (err, req, res, next) => {
     return res.status(400).json({
       success: false,
       message: "Invalid JSON",
-      error:
-        process.env.NODE_ENV === "development"
-          ? err.message
-          : "Invalid request body format",
+      error: process.env.NODE_ENV === "development"
+        ? err.message
+        : "Invalid request body format",
     });
   }
 

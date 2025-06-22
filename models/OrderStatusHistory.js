@@ -21,7 +21,7 @@ export default (sequelize, DataTypes) => {
           "ACCEPTED",
           "IN_PROGRESS",
           "COMPLETED",
-          "CANCELLED",
+          "CANCELLED"
         ),
         allowNull: false,
       },
@@ -32,15 +32,15 @@ export default (sequelize, DataTypes) => {
     },
     {
       timestamps: true,
-    },
+    }
   );
-  
+
   OrderStatusHistory.associate = (models) => {
     OrderStatusHistory.belongsTo(models.clientOrder, {
       foreignKey: "orderId",
       as: "order",
     });
-  }
+  };
 
   return OrderStatusHistory;
 };

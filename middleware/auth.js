@@ -94,11 +94,14 @@ export const canRateUser = async (req, res, next) => {
     const { orderId, orderType, rateeId } = req.body;
     const raterId = req.user.userId;
 
-    if (!orderId || !orderType || !rateeId)
+    if (!orderId || !orderType || !rateeId) {
       return res.status(400).json({ message: "Missing required fields" });
+    }
 
     let orderCompleted = false;
     let validRelationship = false;
+
+    let order;
 
     if (orderType === "CLIENT_ORDER") {
       const order = await db.clientOrder.findByPk(orderId);
@@ -136,15 +139,17 @@ export const canRateUser = async (req, res, next) => {
       return res.status(400).json({ message: "invalid order type" });
     }
 
-    if (!orderCompleted)
+    if (!orderCompleted) {
       return res
         .status(400)
         .json({ message: "you can only rate after finishing the order" });
+    }
 
-    if (!validRelationship)
+    if (!validRelationship) {
       return res.status(403).json({
         message: "you are not authorized to rate this user for this order",
       });
+    }
 
     const existingRating = await db.rating.findOne({
       where: {
@@ -155,10 +160,11 @@ export const canRateUser = async (req, res, next) => {
       },
     });
 
-    if (existingRating)
+    if (existingRating) {
       return res.status(409).json({
         message: "you have already rated this order",
       });
+    }
 
     next();
     orderCompleted = order.status === "DELIVERED";

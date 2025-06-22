@@ -1,8 +1,8 @@
 import express from "express";
-import config from "./config/dotenv.js";
 import connectDB from "./config/dbConfig.js";
-import routes from "./routes/index.js";
+import config from "./config/dotenv.js";
 import middlewares from "./middleware/index.js";
+import routes from "./routes/index.js";
 
 const app = express();
 const PORT = config.port;
@@ -11,14 +11,13 @@ const PORT = config.port;
 connectDB();
 
 // apply middlewares
-// middlewares(app);
 middlewares(app);
 
 // global route handler
 app.use("/", routes);
 
 // 404 Handler
-app.use((req, res) => {
+app.use((_req, res) => {
   res.status(404).json({ success: false, message: "Route doesn't exist" });
 });
 

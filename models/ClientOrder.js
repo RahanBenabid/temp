@@ -36,7 +36,7 @@ export default (sequelize, DataTypes) => {
     },
     {
       timestamps: true,
-    },
+    }
   );
 
   ClientOrder.associate = (models) => {
@@ -44,7 +44,7 @@ export default (sequelize, DataTypes) => {
       foreignKey: "clientId",
       as: "client",
     });
-    
+
     ClientOrder.belongsTo(models.user, {
       foreignKey: "artisanId",
       as: "artisan",
@@ -54,7 +54,7 @@ export default (sequelize, DataTypes) => {
       foreignKey: "orderId",
       as: "orderStatusHistory",
     });
-    
+
     // ClientOrder.hasMany(models.payment, { foreignKey: "orderId" });
   };
 

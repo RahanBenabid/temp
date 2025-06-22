@@ -1,5 +1,4 @@
 import db from "./../models/index.js";
-import { Op } from "sequelize";
 
 const Rating = db.rating;
 const User = db.user;
@@ -144,12 +143,10 @@ class RatingController {
           .status(403)
           .json({ message: "Unauthorized to updated this rating" });
 
-      if (score !== undefined) {
-        if (score < 1 || score > 5) {
-          return res
-            .status(400)
-            .json({ message: "Score must be between 1 and 5" });
-        }
+      if (score !== undefined && (score < 1 || score > 5)) {
+        return res
+          .status(400)
+          .json({ message: "Score must be between 1 and 5" });
       }
 
       const updateData = {};
@@ -205,8 +202,8 @@ class RatingController {
   async getUserRatings(req, res, next) {
     try {
       const userId = req.params.userId;
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
+      const page = Number.parseInt(req.query.page) || 1;
+      const limit = Number.parseInt(req.query.limit) || 10;
 
       const offset = (page - 1) * limit;
 
@@ -341,7 +338,7 @@ class RatingController {
       if (ratings.length === 0) {
         await User.update(
           { averageRating: 0 }, // Explicitly update to 0 when no ratings exist
-          { where: { id: userId } },
+          { where: { id: userId } }
         );
         return null;
       }
@@ -351,7 +348,7 @@ class RatingController {
 
       await User.update(
         { averageRating: parseFloat(averageRating.toFixed(2)) },
-        { where: { id: userId } },
+        { where: { id: userId } }
       );
     } catch (err) {
       console.error("Error updating user average rating:", err);

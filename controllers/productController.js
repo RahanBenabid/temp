@@ -1,22 +1,23 @@
 import db from "./../models/index.js";
 
 const Product = db.product;
-const SupplierProfile = db.supplierProfile;
+const User = db.user;
 
 class ProductController {
   async getProductsBySupplierId(req, res, next) {
     try {
-      const userId = req.params.supplierProfileId;
+      const userId = req.params.supplier_id;
 
-      const supplierExists = await SupplierProfile.findOne({
-        where: { user_id: userId },
+      const supplierExists = await User.findOne({
+        where: { id: userId, role: "SUPPLIER" },
       });
-      if (!supplierExists)
+      if (!supplierExists) {
         return res.status(404).json({ message: "Supplier not found" });
+      }
 
       const products = await Product.findAll({
-        where: { supplierProfileId: supplierExists.id },
-        include: [{ model: SupplierProfile, as: "supplierProfile" }],
+        where: { supplier_id: supplierExists.id },
+        include: [{ model: User, as: "supplier" }],
       });
 
       return res.status(200).json(products);
@@ -29,12 +30,13 @@ class ProductController {
     try {
       const { name, description, price, category } = req.body;
 
-      const supplierProfile = await SupplierProfile.findOne({
-        where: { user_id: req.user.userId },
+      const supplier = await User.findOne({
+        where: { id: req.user.userId, role: "SUPPLIER" },
       });
 
-      if (!supplierProfile)
+      if (!supplier) {
         return res.status(404).json({ message: "Supplier not found" });
+      }
 
       const imageUrl = req.body.imageUrl || "";
       const type = req.body.type || "light";
@@ -46,7 +48,7 @@ class ProductController {
         description,
         price,
         category,
-        supplierProfileId: supplierProfile.id,
+        supplier_id: supplier.id,
         imageUrl,
         type,
         stock,
@@ -63,20 +65,22 @@ class ProductController {
     try {
       const { name, description, price, category } = req.body;
 
-      const supplierProfile = await SupplierProfile.findOne({
-        where: { user_id: req.user.userId },
+      const supplier = await User.findOne({
+        where: { id: req.user.userId, role: "SUPPLIER" },
       });
       const product = await Product.findByPk(req.params.id);
 
-      if (!supplierProfile || !product)
+      if (!supplier || !product) {
         return res
           .status(404)
-          .json({ message: " Product or supplier nor found" });
+          .json({ message: " Product or supplier not found" });
+      }
 
-      if (product.supplierProfileId !== supplierProfile.id)
+      if (product.supplier_id !== supplier.id) {
         return res
           .status(403)
           .json({ message: "Not authorized to perform this action" });
+      }
 
       const imageUrl = req.body.imageUrl || "";
       const type = req.body.type || "light";
@@ -104,21 +108,22 @@ class ProductController {
     try {
       const product = await Product.findByPk(req.params.id);
 
-      if (!product)
+      if (!product) {
         return res.status(404).json({ message: "Product not found" });
+      }
 
-      const supplierProfile = await SupplierProfile.findOne({
-        where: { user_id: req.user.userId },
+      const supplier = await User.findOne({
+        where: { id: req.user.userId, role: "SUPPLIER" },
       });
 
       if (
-        (!supplierProfile ||
-          product.supplierProfileId !== supplierProfile.id) &&
+        (!supplier || product.supplier_id !== supplier.id) &&
         req.user.role !== "ADMIN"
-      )
+      ) {
         return res
           .status(403)
           .json({ message: "Not authorized to perform this action" });
+      }
 
       await product.destroy();
       return res.sendStatus(204);

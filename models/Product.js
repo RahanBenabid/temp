@@ -4,7 +4,7 @@ export default (sequelize, DataTypes) => {
     {
       id: {
         type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDv4,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
       name: {
@@ -28,11 +28,11 @@ export default (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: true,
       },
-      supplierProfileId: {
+      supplier_id: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: "supplierProfiles",
+          model: "users",
           key: "id",
         },
       },
@@ -54,13 +54,13 @@ export default (sequelize, DataTypes) => {
     },
     {
       timestamps: true,
-    }
+    },
   );
 
   Product.associate = (models) => {
     Product.belongsTo(models.supplierProfile, {
-      foreignKey: "supplierProfileId",
-      as: "supplierProfile",
+      foreignKey: "supplier_id",
+      as: "supplier",
     });
   };
 

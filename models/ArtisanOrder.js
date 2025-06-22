@@ -42,7 +42,7 @@ export default (sequelize, DataTypes) => {
     },
     {
       timestamps: true,
-    },
+    }
   );
 
   ArtisanOrder.associate = (models) => {

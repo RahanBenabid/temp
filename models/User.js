@@ -125,6 +125,22 @@ export default (sequelize, DataTypes) => {
       foreignKey: "deliveryManId",
       as: "deliveryOrders",
     });
+
+    /** Product related relationship */
+    User.hasMany(models.product, {
+      foreignKey: "supplier_id",
+      as: "products",
+    });
+
+    /** Project related relationships */
+    User.hasMany(models.project, {
+      foreignKey: "client_id",
+      as: "clientProjects",
+    });
+    User.hasMany(models.project, {
+      foreignKey: "artisan_id",
+      as: "artisanProjects",
+    });
   };
 
   return User;
