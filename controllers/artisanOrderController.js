@@ -1,17 +1,19 @@
-import db from "./../models/index.js";
+import database from "./../models/index.js";
 
-const ArtisanOrder = db.artisanOrder;
-const User = db.user;
+const ArtisanOrder = database.artisanOrder;
+const User = database.user;
 
 const exclude = (user, fields) => {
-  if (!user) return null;
+  if (!user) return;
   const userObject = user.toJSON();
-  fields.forEach((field) => delete userObject[field]);
+  for (const field of fields) {
+    delete userObject[field];
+  }
   return userObject;
 };
 
 class ArtisanOrderController {
-  async getAllOrders(req, res, next) {
+  async getAllOrders(request, response, next) {
     try {
       const artisanOrders = await ArtisanOrder.findAll({
         include: [
@@ -22,11 +24,9 @@ class ArtisanOrderController {
       });
 
       if (!artisanOrders || artisanOrders.length === 0)
-        return res.status(200).json({ message: "No orders found" });
+        return response.status(200).json({ message: "No orders found" });
 
-      /*
-       * TODO: should add pagination here too
-       */
+      // TODO: should add pagination here too
 
       const sanitizedOrders = artisanOrders.map((artisanOrder) => ({
         ...artisanOrder.toJSON(),
@@ -36,35 +36,43 @@ class ArtisanOrderController {
       }));
 
       const size = sanitizedOrders.length;
-      res.status(200).json({ total_orders: size, orders: sanitizedOrders });
-    } catch (err) {
-      return next(err);
+      response
+        .status(200)
+        .json({ total_orders: size, orders: sanitizedOrders });
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async createOrder(req, res, next) {
+  async createOrder(request, response, next) {
     try {
-      const { supplierId, deliveryManId, materialDetails, deliveryAddress } =
-        req.body;
+      const {
+        supplierId,
+        deliveryManId,
+        materialDetails,
+        deliveryAddresponses,
+      } = request.body;
 
       if (!supplierId || !deliveryManId)
-        return res.status(400).json({ message: "Required ID missing" });
+        return response.status(400).json({ message: "Required ID missing" });
 
       const supplier = await User.findOne({ where: { id: supplierId } });
       if (!supplier || supplier.role !== "SUPPLIER")
-        return res.status(400).json({ message: "wrong supplier Id" });
+        return response.status(400).json({ message: "wrong supplier Id" });
 
       const deliveryMan = await User.findOne({ where: { id: deliveryManId } });
       if (!deliveryMan || deliveryMan.role !== "DELIVERY_MAN")
-        return res.status(400).json({ message: "wrong delivery man Id" });
+        return response.status(400).json({ message: "wrong delivery man Id" });
 
-      if (!req.user.userId)
-        return res.status(401).json({ message: "Authentication required" });
+      if (!request.user.userId)
+        return response
+          .status(401)
+          .json({ message: "Authentication required" });
 
-      const artisanId = req.user.userId;
+      const artisanId = request.user.userId;
 
-      if (req.user.role !== "ARTISAN" && req.user.role !== "ADMIN")
-        return res.status(403).json({
+      if (request.user.role !== "ARTISAN" && request.user.role !== "ADMIN")
+        return response.status(403).json({
           message: "Only Artisans or admins can create artisan orders",
         });
 
@@ -73,7 +81,7 @@ class ArtisanOrderController {
         supplierId,
         deliveryManId,
         materialDetails,
-        deliveryAddress,
+        deliveryAddresponses,
       };
 
       const createdOrder = await ArtisanOrder.create(orderData);
@@ -92,17 +100,17 @@ class ArtisanOrderController {
         deliveryMan: exclude(populatedOrder.deliveryMan, ["password"]),
       };
 
-      return res.status(201).json({ order: sanitizedOrder });
-    } catch (err) {
-      return next(err);
+      return response.status(201).json({ order: sanitizedOrder });
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async getOrderById(req, res, next) {
+  async getOrderById(request, response, next) {
     try {
-      const orderId = req.params.id;
+      const orderId = request.params.id;
       if (!orderId)
-        return res.status(400).json({ message: "Required Id missing" });
+        return response.status(400).json({ message: "Required Id missing" });
 
       const order = await ArtisanOrder.findOne({
         where: { id: orderId },
@@ -113,7 +121,8 @@ class ArtisanOrderController {
         ],
       });
 
-      if (!order) return res.status(404).json({ message: "Order not found" });
+      if (!order)
+        return response.status(404).json({ message: "Order not found" });
 
       const sanitizedOrder = {
         ...order.toJSON(),
@@ -122,37 +131,35 @@ class ArtisanOrderController {
         deliveryMan: exclude(order.deliveryMan, ["password"]),
       };
 
-      return res.status(200).json({ order: sanitizedOrder });
-    } catch (err) {
-      return next(err);
+      return response.status(200).json({ order: sanitizedOrder });
+    } catch (error) {
+      return next(error);
     }
   }
 
-  /*
-   * TODO: change status
-   */
+  // TODO: change status
 
-  async updateOrderById(req, res, next) {
+  async updateOrderById(request, response, next) {
     try {
-      const orderId = req.params.id;
+      const orderId = request.params.id;
       const orderExists = await ArtisanOrder.findByPk(orderId);
 
       if (!orderExists)
-        return res.status(404).json({ message: "Order not found" });
+        return response.status(404).json({ message: "Order not found" });
 
-      const { materialDetails, deliveryAddress } = req.body;
+      const { materialDetails, deliveryAddresponses } = request.body;
 
       const orderData = {
         materialDetails,
-        deliveryAddress,
+        deliveryAddresponses,
       };
 
-      const result = await ArtisanOrder.update(orderData, {
+      const responseult = await ArtisanOrder.update(orderData, {
         where: { id: orderId },
       });
 
-      if (!result || result[0] === 0)
-        return res
+      if (!responseult || responseult[0] === 0)
+        return response
           .status(404)
           .json({ message: "Order not found or no update performed" });
 
@@ -171,40 +178,41 @@ class ArtisanOrderController {
         deliveryMan: exclude(updatedOrder.deliveryMan, ["password"]),
       };
 
-      return res.status(200).json({ order: sanitizedOrder });
-    } catch (err) {
-      return next(err);
+      return response.status(200).json({ order: sanitizedOrder });
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async changeOrderStatusById(req, res, next) {
+  async changeOrderStatusById(request, response, next) {
     try {
-      const orderId = req.params.id;
-      const { status } = req.body;
+      const orderId = request.params.id;
+      const { status } = request.body;
 
       if (!orderId)
-        return res.status(400).json({ message: "No order Id provided" });
+        return response.status(400).json({ message: "No order Id provided" });
 
       if (
         !["PENDING", "SHIPPED", "DELIVERED", "CANCELLED"].includes(
           status?.toUpperCase()
         )
       ) {
-        return res.status(400).json({ message: "Invalid status value" });
+        return response.status(400).json({ message: "Invalid status value" });
       }
 
       const order = await ArtisanOrder.findByPk(orderId);
-      if (!order) return res.status(404).json({ message: "Order not found" });
+      if (!order)
+        return response.status(404).json({ message: "Order not found" });
 
-      const result = await ArtisanOrder.update(
+      const responseult = await ArtisanOrder.update(
         { status: status },
         {
           where: { id: orderId },
         }
       );
 
-      if (!result || result[0] === 0)
-        return res.status(404).json({
+      if (!responseult || responseult[0] === 0)
+        return response.status(404).json({
           message: "Order not found or no update performed",
         });
 
@@ -223,34 +231,34 @@ class ArtisanOrderController {
         deliveryMan: exclude(updatedOrder.deliveryMan, ["password"]),
       };
 
-      return res.status(200).json({ order: sanitizedOrder });
-    } catch (err) {
-      return next(err);
+      return response.status(200).json({ order: sanitizedOrder });
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async deleteOrderById(req, res, next) {
+  async deleteOrderById(request, response, next) {
     try {
-      const orderId = req.params.id;
+      const orderId = request.params.id;
       if (!orderId)
-        return res.status(400).json({ message: "No order ID provided" });
+        return response.status(400).json({ message: "No order ID provided" });
 
       const orderExists = await ArtisanOrder.findByPk(orderId);
       if (!orderExists)
-        return res.status(404).json({ message: "Order not found" });
+        return response.status(404).json({ message: "Order not found" });
 
       await ArtisanOrder.destroy({ where: { id: orderId } });
-      return res.sendStatus(204);
-    } catch (err) {
-      return next(err);
+      return response.sendStatus(204);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async getOrderWithRatings(req, res, next) {
+  async getOrderWithRatings(request, response, next) {
     try {
-      const orderId = req.params.id;
+      const orderId = request.params.id;
       if (!orderId)
-        return res.status(400).json({ message: "Order ID is required" });
+        return response.status(400).json({ message: "Order ID is required" });
 
       const order = await ArtisanOrder.findOne({
         where: { id: orderId },
@@ -261,9 +269,10 @@ class ArtisanOrderController {
         ],
       });
 
-      if (!order) return res.status(404).json({ message: "Order not found" });
+      if (!order)
+        return response.status(404).json({ message: "Order not found" });
 
-      const ratings = await db.rating.findAll({
+      const ratings = await database.rating.findAll({
         where: { orderId, orderType: "ARTISAN_ORDER" },
         include: [
           { model: User, as: "rater", attributes: { exclude: ["password"] } },
@@ -279,48 +288,9 @@ class ArtisanOrderController {
         ratings: ratings,
       };
 
-      return res.status(200).json({ order: sanitizedOrder });
-    } catch (err) {
-      return next(err);
-    }
-  }
-
-  async changeOrderStatusById(req, res, next) {
-    try {
-      const orderId = req.params.id;
-      const { status } = req.body;
-
-      if (!orderId)
-        return res.status(400).json({ message: "No order ID provided" });
-
-      if (
-        !["PENDING", "ACCEPTED", "COMPLETED", "CANCELED"].includes(
-          status?.toUpperCase()
-        )
-      )
-        return res.status(400).json({ message: "Invalid status value" });
-
-      const order = await ArtisanOrder.findByPk(orderId);
-      if (!order) return res.status(404).json({ message: "Order not found" });
-
-      const result = await ArtisanOrder.update(
-        { status: status },
-        { where: { id: orderId } }
-      );
-
-      if (!result || result[0] === 0)
-        return res
-          .status(404)
-          .json({ message: "Order not found or no update performed" });
-
-      const updatedOrder = await ArtisanOrder.findByPk(orderId, {
-        include: [
-          { model: User, as: "artisan" },
-          { model: User, as: "delivery" },
-        ],
-      });
-    } catch (err) {
-      return next(err);
+      return response.status(200).json({ order: sanitizedOrder });
+    } catch (error) {
+      return next(error);
     }
   }
 }

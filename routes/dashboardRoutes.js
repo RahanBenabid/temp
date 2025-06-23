@@ -1,4 +1,3 @@
-// routes/dashboardRoutes.js
 import express from "express";
 import { DashboardController } from "./../controllers/index.js";
 import { authenticate } from "./../config/jwtConfig.js";
@@ -16,31 +15,31 @@ router.get(
   "/client",
   authenticate,
   isClient,
-  DashboardController.getClientDashboard,
+  DashboardController.getClientDashboard
 );
 router.get(
   "/artisan",
   authenticate,
   isArtisan,
-  DashboardController.getArtisanDashboard,
+  DashboardController.getArtisanDashboard
 );
 router.get(
   "/supplier",
   authenticate,
   isSupplier,
-  DashboardController.getSupplierDashboard,
+  DashboardController.getSupplierDashboard
 );
 router.get(
   "/delivery",
   authenticate,
   isDeliveryMan,
-  DashboardController.getDeliveryDashboard,
+  DashboardController.getDeliveryDashboard
 );
 router.get(
   "/admin",
   authenticate,
   isAdmin,
-  DashboardController.getAdminDashboard,
+  DashboardController.getAdminDashboard
 );
 
 export default router;

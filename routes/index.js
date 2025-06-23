@@ -4,7 +4,7 @@ import ArtisanOrderRoutes from "./artisanOrderRoutes.js";
 import ClientOrderRoutes from "./clientOrderRoutes.js";
 import DashboardRoutes from "./dashboardRoutes.js";
 import ProductRoutes from "./productRoutes.js";
-import ProjectRoutes from "./projectRouter.js";
+import ProjectRoutes from "./projectRoutes.js";
 import RatingRoutes from "./ratingRoutes.js";
 import UserRoutes from "./userRoutes.js";
 

@@ -1,18 +1,18 @@
-import db from "./../models/index.js";
+import database from "./../models/index.js";
 
-const Product = db.product;
-const User = db.user;
+const Product = database.product;
+const User = database.user;
 
 class ProductController {
-  async getProductsBySupplierId(req, res, next) {
+  async getProductsBySupplierId(request, response, next) {
     try {
-      const userId = req.params.supplier_id;
+      const userId = request.params.supplier_id;
 
       const supplierExists = await User.findOne({
         where: { id: userId, role: "SUPPLIER" },
       });
       if (!supplierExists) {
-        return res.status(404).json({ message: "Supplier not found" });
+        return response.status(404).json({ message: "Supplier not found" });
       }
 
       const products = await Product.findAll({
@@ -20,27 +20,27 @@ class ProductController {
         include: [{ model: User, as: "supplier" }],
       });
 
-      return res.status(200).json(products);
-    } catch (err) {
-      return next(err);
+      return response.status(200).json(products);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async createProduct(req, res, next) {
+  async createProduct(request, response, next) {
     try {
-      const { name, description, price, category } = req.body;
+      const { name, description, price, category } = request.body;
 
       const supplier = await User.findOne({
-        where: { id: req.user.userId, role: "SUPPLIER" },
+        where: { id: request.user.userId, role: "SUPPLIER" },
       });
 
       if (!supplier) {
-        return res.status(404).json({ message: "Supplier not found" });
+        return response.status(404).json({ message: "Supplier not found" });
       }
 
-      const imageUrl = req.body.imageUrl || "";
-      const type = req.body.type || "light";
-      const stock = req.body.stock !== undefined ? req.body.stock : 0;
+      const imageUrl = request.body.imageUrl || "";
+      const type = request.body.type || "light";
+      const stock = request.body.stock === undefined ? 0 : request.body.stock;
       const isAvailable = stock !== 0;
 
       const product = await Product.create({
@@ -55,36 +55,36 @@ class ProductController {
         isAvailable,
       });
 
-      return res.status(201).json(product);
-    } catch (err) {
-      return next(err);
+      return response.status(201).json(product);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async updateProduct(req, res, next) {
+  async updateProduct(request, response, next) {
     try {
-      const { name, description, price, category } = req.body;
+      const { name, description, price, category } = request.body;
 
       const supplier = await User.findOne({
-        where: { id: req.user.userId, role: "SUPPLIER" },
+        where: { id: request.user.userId, role: "SUPPLIER" },
       });
-      const product = await Product.findByPk(req.params.id);
+      const product = await Product.findByPk(request.params.id);
 
       if (!supplier || !product) {
-        return res
+        return response
           .status(404)
           .json({ message: " Product or supplier not found" });
       }
 
       if (product.supplier_id !== supplier.id) {
-        return res
+        return response
           .status(403)
           .json({ message: "Not authorized to perform this action" });
       }
 
-      const imageUrl = req.body.imageUrl || "";
-      const type = req.body.type || "light";
-      const stock = req.body.stock !== undefined ? req.body.stock : 0;
+      const imageUrl = request.body.imageUrl || "";
+      const type = request.body.type || "light";
+      const stock = request.body.stock === undefined ? 0 : request.body.stock;
       const isAvailable = stock !== 0;
 
       await product.update({
@@ -98,37 +98,37 @@ class ProductController {
         isAvailable,
       });
 
-      return res.status(200).json({ product });
-    } catch (err) {
-      return next(err);
+      return response.status(200).json({ product });
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async deleteProduct(req, res, next) {
+  async deleteProduct(request, response, next) {
     try {
-      const product = await Product.findByPk(req.params.id);
+      const product = await Product.findByPk(request.params.id);
 
       if (!product) {
-        return res.status(404).json({ message: "Product not found" });
+        return response.status(404).json({ message: "Product not found" });
       }
 
       const supplier = await User.findOne({
-        where: { id: req.user.userId, role: "SUPPLIER" },
+        where: { id: request.user.userId, role: "SUPPLIER" },
       });
 
       if (
         (!supplier || product.supplier_id !== supplier.id) &&
-        req.user.role !== "ADMIN"
+        request.user.role !== "ADMIN"
       ) {
-        return res
+        return response
           .status(403)
           .json({ message: "Not authorized to perform this action" });
       }
 
       await product.destroy();
-      return res.sendStatus(204);
-    } catch (err) {
-      return next(err);
+      return response.sendStatus(204);
+    } catch (error) {
+      return next(error);
     }
   }
 }

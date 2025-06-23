@@ -1,23 +1,25 @@
 import Sequelize from "sequelize";
-import bcrypt from "bcrypt";
-import db from "./../models/index.js";
+// import bcrypt from "bcrypt";
+import database from "./../models/index.js";
 import { generateAccessToken } from "./../config/jwtConfig.js";
 
-const User = db.user;
-const ClientProfile = db.clientProfile;
-const ArtisanProfile = db.artisanProfile;
-const SupplierProfile = db.supplierProfile;
-const DeliveryManProfile = db.deliveryManProfile;
+const User = database.user;
+const ClientProfile = database.clientProfile;
+const ArtisanProfile = database.artisanProfile;
+const SupplierProfile = database.supplierProfile;
+const DeliveryManProfile = database.deliveryManProfile;
 
 const exclude = (user, fields) => {
-  if (!user) return null;
+  if (!user);
   const userObject = user.toJSON();
-  fields.forEach((field) => delete userObject[field]);
+  for (const field of fields) {
+    delete userObject[field];
+  }
   return userObject;
 };
 
 class UserController {
-  async getAllUsers(req, res, next) {
+  async getAllUsers(request, response, next) {
     try {
       const users = await User.findAll({
         include: [
@@ -28,15 +30,15 @@ class UserController {
         ],
       });
       if (!users || users.length === 0)
-        return res.status(404).json({ message: "No users found" });
+        return response.status(404).json({ message: "No users found" });
       const sanitizedUsers = users.map((user) => exclude(user, ["password"]));
-      return res.status(200).json(sanitizedUsers);
-    } catch (err) {
-      return next(err);
+      return response.status(200).json(sanitizedUsers);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async createUser(req, res, next) {
+  async createUser(request, response, next) {
     try {
       const {
         firstname,
@@ -52,36 +54,37 @@ class UserController {
         shopName,
         shopAddress,
         nationalCardNumber,
-      } = req.body;
+      } = request.body;
 
-      const requesterRole = req.user?.role;
+      // const requesterRole = request.user?.role;
 
       // check required fields
       if (!firstname || !lastname || !password || !email)
-        return res.status(400).json({ message: "Missing required fields" });
+        return response
+          .status(400)
+          .json({ message: "Missing required fields" });
       if (role === "ARTISAN" && !profession)
-        return res
+        return response
           .status(400)
           .json({ message: "Profession required for ARTISAN" });
       if (role === "SUPPLIER" && (!shopName || !shopAddress))
-        return res
+        return response
           .status(400)
           .json({ message: "Shop name and address required for SUPPLIER" });
       if (role === "DELIVERY_MAN" && (!nationalCardNumber || !vehicle))
-        return res
-          .status(400)
-          .json({
-            message:
-              "National card number and vehicle required for DELIVERY_MAN",
-          });
+        return response.status(400).json({
+          message: "National card number and vehicle required for DELIVERY_MAN",
+        });
 
       let existingUser = await User.findOne({ where: { email } });
       if (existingUser)
-        return res.status(409).json({ message: "Email already in use" });
+        return response.status(409).json({ message: "Email already in use" });
 
       existingUser = await User.findOne({ where: { phone } });
       if (existingUser)
-        return res.status(409).json({ message: "Phone number already in use" });
+        return response
+          .status(409)
+          .json({ message: "Phone number already in use" });
 
       const userData = {
         firstname,
@@ -89,22 +92,24 @@ class UserController {
         phone,
         email,
         password,
-        role: req.body.role?.toUpperCase() || "CLIENT",
+        role: request.body.role?.toUpperCase() || "CLIENT",
       };
       let user = await User.create(userData);
 
       let profile;
       switch (userData.role) {
-        case "CLIENT":
+        case "CLIENT": {
           profile = await ClientProfile.create({ address, user_id: user.id });
           break;
-        case "ARTISAN":
+        }
+        case "ARTISAN": {
           profile = await ArtisanProfile.create({
             profession,
             user_id: user.id,
           });
           break;
-        case "SUPPLIER":
+        }
+        case "SUPPLIER": {
           profile = await SupplierProfile.create({
             shopName,
             shopAddress,
@@ -112,16 +117,19 @@ class UserController {
             user_id: user.id,
           });
           break;
-        case "DELIVERY_MAN":
+        }
+        case "DELIVERY_MAN": {
           profile = await DeliveryManProfile.create({
             nationalCardNumber,
             vehicle,
             user_id: user.id,
           });
           break;
-        case "ADMIN":
+        }
+        case "ADMIN": {
           // No profile needed for ADMIN (for now)
           break;
+        }
       }
 
       user = await User.findByPk(user.id, {
@@ -134,16 +142,17 @@ class UserController {
       });
 
       const sanitizedUser = exclude(user, ["password"]);
-      return res.status(201).json({ user: sanitizedUser, profile });
-    } catch (err) {
-      return next(err);
+      return response.status(201).json({ user: sanitizedUser, profile });
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async getUserUsingIdOrEmailOrPhoneNumber(req, res, next) {
+  async getUserUsingIdOrEmailOrPhoneNumber(request, response, next) {
     try {
-      const query = req.params.id;
-      if (!query) return res.status(400).json({ message: "No query provided" });
+      const query = request.params.id;
+      if (!query)
+        return response.status(400).json({ message: "No query provided" });
 
       const user = await User.findOne({
         where: {
@@ -161,32 +170,33 @@ class UserController {
         ],
       });
 
-      if (!user) return res.status(404).json({ message: "User not found" });
+      if (!user)
+        return response.status(404).json({ message: "User not found" });
 
       const sanitizedUser = exclude(user, ["password"]);
-      return res.status(200).json(sanitizedUser);
-    } catch (err) {
-      return next(err);
+      return response.status(200).json(sanitizedUser);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async updateUserById(req, res, next) {
+  async updateUserById(request, response, next) {
     try {
-      const userId = req.params.id;
+      const userId = request.params.id;
       if (!userId)
-        return res.status(400).json({ message: "User ID not provided" });
+        return response.status(400).json({ message: "User ID not provided" });
 
-      if (req.user.userId !== userId && req.user.role !== "ADMIN")
-        return res.status(403).json({ message: "Unauthorized" });
+      if (request.user.userId !== userId && request.user.role !== "ADMIN")
+        return response.status(403).json({ message: "Unauthorized" });
 
-      const { firstname, lastname, email, phone, password } = req.body;
+      const { firstname, lastname, email, phone, password } = request.body;
 
       if (email) {
         const existing = await User.findOne({
           where: { email, id: { [Sequelize.Op.ne]: userId } },
         });
         if (existing)
-          return res.status(409).json({ message: "Email already in use" });
+          return response.status(409).json({ message: "Email already in use" });
       }
 
       const data = { firstname, lastname, email, phone };
@@ -197,7 +207,7 @@ class UserController {
       });
 
       if (!result || result[0] === 0)
-        return res
+        return response
           .status(404)
           .json({ message: "User not found or no update performed" });
 
@@ -210,49 +220,53 @@ class UserController {
         ],
       });
       const sanitizedUser = exclude(updatedUser, ["password"]);
-      return res.status(200).json(sanitizedUser);
-    } catch (err) {
-      return next(err);
+      return response.status(200).json(sanitizedUser);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async loginUser(req, res, next) {
+  async loginUser(request, response, next) {
     try {
-      const { email, password } = req.body;
+      const { email, password } = request.body;
 
       const user = await User.findOne({ where: { email } });
       if (!user)
-        return res.status(404).json({ message: "This email does not exist" });
+        return response
+          .status(404)
+          .json({ message: "This email does not exist" });
 
       const isMatch = await user.validPassword(password);
       if (!isMatch)
-        return res.status(400).json({ message: "Invalid password or email" });
+        return response
+          .status(400)
+          .json({ message: "Invalid password or email" });
 
       const token = generateAccessToken(user.id, user.role);
       const sanitizedUser = exclude(user, ["password"]);
-      return res.status(200).json({ token, user: sanitizedUser });
-    } catch (err) {
-      return next(err);
+      return response.status(200).json({ token, user: sanitizedUser });
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async deleteUserById(req, res, next) {
+  async deleteUserById(request, response, next) {
     try {
-      const userId = req.params.id;
+      const userId = request.params.id;
       if (!userId)
-        return res.status(400).json({ message: "No user ID provided" });
+        return response.status(400).json({ message: "No user ID provided" });
 
-      if (req.user.userId !== userId && req.user.role !== "ADMIN")
-        return res.status(403).json({ message: "Unauthorized" });
+      if (request.user.userId !== userId && request.user.role !== "ADMIN")
+        return response.status(403).json({ message: "Unauthorized" });
 
       const userExists = await User.findByPk(userId);
       if (!userExists)
-        return res.status(404).json({ message: "User not found" });
+        return response.status(404).json({ message: "User not found" });
 
       await User.destroy({ where: { id: userId } });
-      return res.status(204).send();
-    } catch (err) {
-      return next(err);
+      return response.status(204).send();
+    } catch (error) {
+      return next(error);
     }
   }
 }

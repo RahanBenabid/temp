@@ -1,27 +1,27 @@
 import jwt from "jsonwebtoken";
 import config from "./../config/dotenv.js";
-import db from "./../models/index.js";
+import database from "./../models/index.js";
 
-export const restrictToAdminForSpecialRoles = (req, res, next) => {
-  const role = req.body.role?.toUpperCase();
+export const restrictToAdminForSpecialRoles = (request, response, next) => {
+  const role = request.body.role?.toUpperCase();
 
   if (!role || role === "CLIENT") {
     return next(); // No restrictions for CLIENT or no role
   }
 
-  const authHeader = req.headers["authorization"];
-  if (!authHeader) return res.sendStatus(401);
+  const authHeader = request.headers["authorization"];
+  if (!authHeader) return response.sendStatus(401);
 
   const token = authHeader.split(" ")[1];
-  if (!token) return res.sendStatus(403);
+  if (!token) return response.sendStatus(403);
 
   jwt.verify(token, config.tokenSecret, (error, user) => {
     if (error) {
       console.error("Token verification failed:", error);
-      return res.sendStatus(403);
+      return response.sendStatus(403);
     }
 
-    req.user = user;
+    request.user = user;
 
     const requesterRole = user.role?.toUpperCase();
     const validRoles = [
@@ -33,11 +33,11 @@ export const restrictToAdminForSpecialRoles = (req, res, next) => {
     ];
 
     if (!validRoles.includes(role)) {
-      return res.status(400).json({ message: "Invalid role" });
+      return response.status(400).json({ message: "Invalid role" });
     }
 
     if (role !== "CLIENT" && requesterRole !== "ADMIN") {
-      return res
+      return response
         .status(403)
         .json({ message: "Only ADMIN can create non-CLIENT users" });
     }
@@ -46,56 +46,56 @@ export const restrictToAdminForSpecialRoles = (req, res, next) => {
   });
 };
 
-export const isAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== "ADMIN") {
-    return res.status(403).send("Admin verification failed");
+export const isAdmin = (request, response, next) => {
+  if (!request.user || request.user.role !== "ADMIN") {
+    return response.status(403).send("Admin verification failed");
   }
   next();
 };
 
-export const isClient = (req, res, next) => {
-  if (req.user.role === "CLIENT" || req.user.role === "ADMIN") {
+export const isClient = (request, response, next) => {
+  if (request.user.role === "CLIENT" || request.user.role === "ADMIN") {
     return next();
   }
-  return res
+  return response
     .status(403)
     .json({ message: "Access denied: Client role required" });
 };
 
-export const isArtisan = (req, res, next) => {
-  if (req.user.role === "ARTISAN" || req.user.role === "ADMIN") {
+export const isArtisan = (request, response, next) => {
+  if (request.user.role === "ARTISAN" || request.user.role === "ADMIN") {
     return next();
   }
-  return res
+  return response
     .status(403)
     .json({ message: "Access denied: Artisan role required" });
 };
 
-export const isSupplier = (req, res, next) => {
-  if (req.user.role === "SUPPLIER" || req.user.role === "ADMIN") {
+export const isSupplier = (request, response, next) => {
+  if (request.user.role === "SUPPLIER" || request.user.role === "ADMIN") {
     return next();
   }
-  return res
+  return response
     .status(403)
     .json({ message: "Access denied: Supplier role required" });
 };
 
-export const isDeliveryMan = (req, res, next) => {
-  if (req.user.role === "DELIVERY_MAN" || req.user.role === "ADMIN") {
+export const isDeliveryMan = (request, response, next) => {
+  if (request.user.role === "DELIVERY_MAN" || request.user.role === "ADMIN") {
     return next();
   }
-  return res
+  return response
     .status(403)
     .json({ message: "Access denied: Delivery Man role required" });
 };
 
-export const canRateUser = async (req, res, next) => {
+export const canRateUser = async (request, response, next) => {
   try {
-    const { orderId, orderType, rateeId } = req.body;
-    const raterId = req.user.userId;
+    const { orderId, orderType, rateeId } = request.body;
+    const raterId = request.user.userId;
 
     if (!orderId || !orderType || !rateeId) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return response.status(400).json({ message: "Missing required fields" });
     }
 
     let orderCompleted = false;
@@ -104,8 +104,9 @@ export const canRateUser = async (req, res, next) => {
     let order;
 
     if (orderType === "CLIENT_ORDER") {
-      const order = await db.clientOrder.findByPk(orderId);
-      if (!order) return res.status(404).json({ message: " order not found" });
+      const order = await database.clientOrder.findByPk(orderId);
+      if (!order)
+        return response.status(404).json({ message: " order not found" });
     }
 
     orderCompleted = order.status === "COMPLETED";
@@ -116,8 +117,9 @@ export const canRateUser = async (req, res, next) => {
     } else if (order.artisanId === raterId && order.clientId === rateeId) {
       validRelationship = true; // artisan rating client
     } else if (orderType === "ARTISAN_ORDER") {
-      const order = await db.artisanOrder.findByPk(orderId);
-      if (!order) return res.status(404).json({ message: "order not found" });
+      const order = await database.artisanOrder.findByPk(orderId);
+      if (!order)
+        return response.status(404).json({ message: "order not found" });
       orderCompleted = order.status === "DELIVERED";
 
       if (order.artisanId === raterId && order.suppllierId === rateeId) {
@@ -136,22 +138,22 @@ export const canRateUser = async (req, res, next) => {
         validRelationship = true; // delivery man rating artisan
       }
     } else {
-      return res.status(400).json({ message: "invalid order type" });
+      return response.status(400).json({ message: "invalid order type" });
     }
 
     if (!orderCompleted) {
-      return res
+      return response
         .status(400)
         .json({ message: "you can only rate after finishing the order" });
     }
 
     if (!validRelationship) {
-      return res.status(403).json({
+      return response.status(403).json({
         message: "you are not authorized to rate this user for this order",
       });
     }
 
-    const existingRating = await db.rating.findOne({
+    const existingRating = await database.rating.findOne({
       where: {
         raterId,
         rateeId,
@@ -161,14 +163,14 @@ export const canRateUser = async (req, res, next) => {
     });
 
     if (existingRating) {
-      return res.status(409).json({
+      return response.status(409).json({
         message: "you have already rated this order",
       });
     }
 
     next();
     orderCompleted = order.status === "DELIVERED";
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 };

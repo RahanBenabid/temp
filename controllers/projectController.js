@@ -1,10 +1,10 @@
-import db from "./../models/index.js";
+import database from "./../models/index.js";
 
-const Project = db.project;
-const User = db.user;
+const Project = database.project;
+const User = database.user;
 
 class ProjectController {
-  async createProject(req, res, next) {
+  async createProject(request, response, next) {
     try {
       const {
         title,
@@ -15,13 +15,13 @@ class ProjectController {
         images,
         client_id,
         artisan_id,
-      } = req.body;
+      } = request.body;
 
       const client = await User.findOne({
-        where: { id: req.user.id, role: "CLIENT" },
+        where: { id: request.user.id, role: "CLIENT" },
       });
       if (!client || client.id !== client_id) {
-        return res.status(404).json({ message: "Client not found" });
+        return response.status(404).json({ message: "Client not found" });
       }
 
       if (artisan_id) {
@@ -29,7 +29,7 @@ class ProjectController {
           where: { id: artisan_id, role: "ARTISAN" },
         });
         if (!artisan) {
-          return res.status(404).json({ message: "Artisan not found" });
+          return response.status(404).json({ message: "Artisan not found" });
         }
       }
 
@@ -44,15 +44,15 @@ class ProjectController {
         artisan_id,
       });
 
-      return res.status(201).json(project);
-    } catch (err) {
-      return next(err);
+      return response.status(201).json(project);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async getAllProjects(req, res, next) {
+  async getAllProjects(request, response, next) {
     try {
-      const { status, client_id, artisan_id } = req.query;
+      const { status, client_id, artisan_id } = request.query;
       const where = {};
       if (status) where.status = status;
       if (client_id) where.client_id = client_id;
@@ -67,16 +67,16 @@ class ProjectController {
         order: [["createdAt", "DESC"]],
       });
 
-      return res.status(200).json(projects);
-    } catch (err) {
-      return next(err);
+      return response.status(200).json(projects);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async getProjectById(req, res, next) {
+  async getProjectById(request, response, next) {
     try {
       const project = await Project.findOne({
-        where: { id: req.params.id },
+        where: { id: request.params.id },
         include: [
           { model: User, as: "client" },
           { model: User, as: "artisan" },
@@ -84,24 +84,24 @@ class ProjectController {
       });
 
       if (!project) {
-        return res.status(404).json({ message: "Project not found" });
+        return response.status(404).json({ message: "Project not found" });
       }
 
-      return res.status(200).json(project);
-    } catch (err) {
-      return next(err);
+      return response.status(200).json(project);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async updateProjectById(req, res, next) {
+  async updateProjectById(request, response, next) {
     try {
-      const project = await Project.findByPk(req.params.id);
+      const project = await Project.findByPk(request.params.id);
       if (!project) {
-        res.status(404).json({ message: "Project not found" });
+        response.status(404).json({ message: "Project not found" });
       }
 
-      if (project.client_id !== req.user.userId) {
-        return res.status(403).json({
+      if (project.client_id !== request.user.userId) {
+        return response.status(403).json({
           message: "You are only authorized to modify your own projects",
         });
       }
@@ -114,14 +114,14 @@ class ProjectController {
         category,
         images,
         artisan_id,
-      } = req.body;
+      } = request.body;
 
       if (artisan_id) {
         const artisan = await User.findOne({
           where: { id: artisan_id, role: "ARTISAN" },
         });
         if (!artisan) {
-          return res.status(404).json({ message: "Artisan not found" });
+          return response.status(404).json({ message: "Artisan not found" });
         }
       }
 
@@ -135,30 +135,33 @@ class ProjectController {
         artisan_id,
       });
 
-      return res.status(200).json(updatedProject);
-    } catch (err) {
-      return next(err);
+      return response.status(200).json(updatedProject);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async deleteProject(req, res, next) {
+  async deleteProject(request, response, next) {
     try {
-      const project = await Project.findByPk(req.params.id);
+      const project = await Project.findByPk(request.params.id);
       if (!project) {
-        return res.status(404).json({ message: "Project not found" });
+        return response.status(404).json({ message: "Project not found" });
       }
 
-      if (project.client_id !== req.user.userId && req.user.role !== "ADMIN") {
-        return res.status(403).json({
+      if (
+        project.client_id !== request.user.userId &&
+        request.user.role !== "ADMIN"
+      ) {
+        return response.status(403).json({
           message: "Not authorized to delete this project",
         });
       }
 
       await project.destroy();
 
-      return res.status(204).send();
-    } catch (err) {
-      return next(err);
+      return response.status(204).send();
+    } catch (error) {
+      return next(error);
     }
   }
 }

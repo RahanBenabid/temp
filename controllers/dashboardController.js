@@ -1,15 +1,15 @@
-import db from "../models/index.js";
+import database from "../models/index.js";
 import { Op } from "sequelize";
 
-const User = db.user;
-const ClientOrder = db.clientOrder;
-const ArtisanOrder = db.artisanOrder;
-const Rating = db.rating;
+const User = database.user;
+const ClientOrder = database.clientOrder;
+const ArtisanOrder = database.artisanOrder;
+const Rating = database.rating;
 
 class DashboardController {
-  async getClientDashboard(req, res, next) {
+  async getClientDashboard(request, response, next) {
     try {
-      const userId = req.user.userId;
+      const userId = request.user.userId;
 
       const orders = await ClientOrder.findAll({
         where: { clientId: userId },
@@ -47,19 +47,19 @@ class DashboardController {
        * TODO: add saved artisans later when i implement that feature
        */
 
-      return res.status(200).json({
+      return response.status(200).json({
         recent_orders: orders,
         pending_requests: pendingOrders,
         top_rated_artisans: topRatedArtisans,
       });
-    } catch (err) {
-      return next(err);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async getArtisanDashboard(req, res, next) {
+  async getArtisanDashboard(request, response, next) {
     try {
-      const userId = req.user.userId;
+      const userId = request.user.userId;
 
       const clientOrders = await ClientOrder.findAll({
         where: { artisanId: userId },
@@ -117,32 +117,38 @@ class DashboardController {
       const ratingsStats = await Rating.findAll({
         where: { rateeId: userId },
         attributes: [
-          [db.sequelize.fn("AVG", db.sequelize.col("score")), "average"],
-          [db.sequelize.fn("COUNT", db.sequelize.col("id")), "count"],
+          [
+            database.sequelize.fn("AVG", database.sequelize.col("score")),
+            "average",
+          ],
+          [
+            database.sequelize.fn("COUNT", database.sequelize.col("id")),
+            "count",
+          ],
         ],
       });
 
       const averageRating = ratingsStats[0].dataValues.average || 0;
       const ratingCount = ratingsStats[0].dataValues.count || 0;
 
-      return res.status(200).json({
+      return response.status(200).json({
         client_requests: clientOrders,
         supply_orders: supplyOrders,
         completion_rate: completionRate.toFixed(2),
         recent_ratings: ratingReceived,
         rating_summary: {
-          average: parseFloat(averageRating.toFixed(2)),
+          average: Number.parseFloat(averageRating.toFixed(2)),
           count: ratingCount,
         },
       });
-    } catch (err) {
-      return next(err);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async getSupplierDashboard(req, res, next) {
+  async getSupplierDashboard(request, response, next) {
     try {
-      const userId = req.user.userId;
+      const userId = request.user.userId;
 
       const pendingOrders = await ArtisanOrder.findAll({
         where: {
@@ -160,22 +166,22 @@ class DashboardController {
         order: [["createdAt", "DESC"]],
       });
 
-      const supplierProfile = await db.supplierProfile.findOne({
+      const supplierProfile = await database.supplierProfile.findOne({
         where: { user_id: userId },
       });
 
-      return res.status(200).json({
+      return response.status(200).json({
         pending_requests: pendingOrders,
         inventory_status: supplierProfile?.inventory || {},
       });
-    } catch (err) {
-      return next(err);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async getDeliveryDashboard(req, res, next) {
+  async getDeliveryDashboard(request, response, next) {
     try {
-      const userId = req.user.userId;
+      const userId = request.user.userId;
 
       const deliveries = await ArtisanOrder.findAll({
         where: {
@@ -193,15 +199,15 @@ class DashboardController {
         order: [["createdAt", "DESC"]],
       });
 
-      return res.status(200).json({
+      return response.status(200).json({
         assigned_deliveries: deliveries,
       });
-    } catch (err) {
-      return next(err);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async getAdminDashboard(req, res, next) {
+  async getAdminDashboard(request, response, next) {
     try {
       // user stats
       const userCounts = {
@@ -257,7 +263,7 @@ class DashboardController {
         limit: 10,
       });
 
-      return res.status(200).json({
+      return response.status(200).json({
         user_stats: userCounts,
         client_order_stats: clientOrderCounts,
         artisan_order_stats: artisanOrderCounts,
@@ -265,8 +271,8 @@ class DashboardController {
         recent_orders: recentClientOrders,
         top_rated_users: topRatedUsers,
       });
-    } catch (err) {
-      return next(err);
+    } catch (error) {
+      return next(error);
     }
   }
 }

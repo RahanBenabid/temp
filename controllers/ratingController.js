@@ -1,41 +1,45 @@
-import db from "./../models/index.js";
+import database from "./../models/index.js";
 
-const Rating = db.rating;
-const User = db.user;
-const ClientOrder = db.clientOrder;
-const ArtisanOrder = db.artisanOrder;
+const Rating = database.rating;
+const User = database.user;
+const ClientOrder = database.clientOrder;
+const ArtisanOrder = database.artisanOrder;
 
 const exclude = (user, fields) => {
-  if (!user) return null;
+  if (!user) return;
   const userObject = user.toJSON();
-  fields.forEach((field) => delete userObject[field]);
+  for (const field of fields) {
+    delete userObject[field];
+  }
   return userObject;
 };
 
 class RatingController {
-  async createRating(req, res, next) {
+  async createRating(request, response, next) {
     try {
-      const { score, comment, rateeId, orderId, orderType } = req.body;
+      const { score, comment, rateeId, orderId, orderType } = request.body;
 
       if (!score || !rateeId || !orderId || !orderType)
-        return res.status(400).json({
+        return response.status(400).json({
           message: "Missing required fields",
         });
 
       if (score < 1 || score > 5)
-        return res
+        return response
           .status(400)
           .json({ message: "Score must be between 1 and 5" });
 
       if (!["CLIENT_ORDER", "ARTISAN_ORDER"].includes(orderType))
-        return res.status(400).json({ message: "Invalid order type" });
+        return response.status(400).json({ message: "Invalid order type" });
 
-      const raterId = req.user.userId;
-      const raterType = req.user.role;
+      const raterId = request.user.userId;
+      const raterType = request.user.role;
       const ratee = await User.findByPk(rateeId);
 
       if (!ratee)
-        return res.status(404).json({ message: "User to be rated not found" });
+        return response
+          .status(404)
+          .json({ message: "User to be rated not found" });
 
       const rateeType = ratee.role;
 
@@ -44,7 +48,8 @@ class RatingController {
 
       if (orderType === "CLIENT_ORDER") {
         const order = await ClientOrder.findByPk(orderId);
-        if (!order) return res.status(404).json({ message: "order not found" });
+        if (!order)
+          return response.status(404).json({ message: "order not found" });
 
         // making sure the order is completed
         orderCompleted = order.status === "COMPLETED";
@@ -60,7 +65,8 @@ class RatingController {
       } else if (orderType === "ARTISAN_ORDER") {
         const order = await ArtisanOrder.findByPk(orderId);
 
-        if (!order) return res.status(404).json({ message: "order not found" });
+        if (!order)
+          return response.status(404).json({ message: "order not found" });
 
         // making sure the order is delivered
         orderCompleted = order.status === "DELIVERED";
@@ -82,12 +88,12 @@ class RatingController {
       }
 
       if (!orderExists)
-        return res.status(403).json({
+        return response.status(403).json({
           message: "You are not authorized to rate this user for this order",
         });
 
       if (!orderCompleted)
-        return res.status(403).json({
+        return response.status(403).json({
           message: "You can only rate after the order us completed/delivered",
         });
 
@@ -101,7 +107,7 @@ class RatingController {
       });
 
       if (existingRating)
-        return res.status(409).json({
+        return response.status(409).json({
           message: "You already rated this order",
         });
 
@@ -120,31 +126,32 @@ class RatingController {
 
       this.updateUserAverageRating(rateeId);
 
-      return res.status(201).json({ rating });
-    } catch (err) {
-      return next(err);
+      return response.status(201).json({ rating });
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async updateRating(req, res, next) {
+  async updateRating(request, response, next) {
     try {
-      const ratingId = req.params.id;
-      const { score, comment } = req.body;
-      const userId = req.user.userId;
+      const ratingId = request.params.id;
+      const { score, comment } = request.body;
+      const userId = request.user.userId;
 
       if (!ratingId)
-        return res.status(400).json({ message: "Rating ID is required" });
+        return response.status(400).json({ message: "Rating ID is required" });
 
       const rating = await Rating.findByPk(ratingId);
-      if (!rating) return res.status(404).json({ message: "Rating not found" });
+      if (!rating)
+        return response.status(404).json({ message: "Rating not found" });
 
-      if (rating.raterId !== userId && req.user.role !== "ADMIN")
-        return res
+      if (rating.raterId !== userId && request.user.role !== "ADMIN")
+        return response
           .status(403)
           .json({ message: "Unauthorized to updated this rating" });
 
       if (score !== undefined && (score < 1 || score > 5)) {
-        return res
+        return response
           .status(400)
           .json({ message: "Score must be between 1 and 5" });
       }
@@ -164,28 +171,29 @@ class RatingController {
         ],
       });
 
-      return res.status(200).json({ rating: updateRating });
-    } catch (err) {
-      return next(err);
+      return response.status(200).json({ rating: updateRating });
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async deleteRating(req, res, next) {
+  async deleteRating(request, response, next) {
     try {
-      const ratingId = req.params.id;
-      const userId = req.user.userId;
+      const ratingId = request.params.id;
+      const userId = request.user.userId;
 
       if (!ratingId)
-        return res.status(400).json({ message: "Rating ID is required" });
+        return response.status(400).json({ message: "Rating ID is required" });
 
       const rating = await Rating.findByPk(ratingId);
 
-      if (!rating) return res.status(404).json({ message: "Rating not found" });
+      if (!rating)
+        return response.status(404).json({ message: "Rating not found" });
 
       const rateeId = rating.rateeId;
 
-      if (rating.raterId !== userId && req.user.role !== "ADMIN")
-        return res
+      if (rating.raterId !== userId && request.user.role !== "ADMIN")
+        return response
           .status(403)
           .json({ message: "Unauthorized to delete this rating" });
 
@@ -193,26 +201,27 @@ class RatingController {
 
       this.updateUserAverageRating(rateeId);
 
-      return res.status(204).send();
-    } catch (err) {
-      return next(err);
+      return response.status(204).send();
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async getUserRatings(req, res, next) {
+  async getUserRatings(request, response, next) {
     try {
-      const userId = req.params.userId;
-      const page = Number.parseInt(req.query.page) || 1;
-      const limit = Number.parseInt(req.query.limit) || 10;
+      const userId = request.params.userId;
+      const page = Number.parseInt(request.query.page) || 1;
+      const limit = Number.parseInt(request.query.limit) || 10;
 
       const offset = (page - 1) * limit;
 
       if (!userId)
-        return res.status(400).json({ message: "user ID is required" });
+        return response.status(400).json({ message: "user ID is required" });
 
       const user = await User.findByPk(userId);
 
-      if (!user) return res.status(404).json({ message: "user not found" });
+      if (!user)
+        return response.status(404).json({ message: "user not found" });
 
       const { count, rows: ratings } = await Rating.findAndCountAll({
         where: { rateeId: userId },
@@ -225,33 +234,34 @@ class RatingController {
         offset,
       });
 
-      return res.status(200).json({
+      return response.status(200).json({
         total_ratings: count,
         current_page: page,
         per_page: limit,
         ratings,
       });
-    } catch (err) {
-      return next(err);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async getUserRatingStats(req, res, next) {
+  async getUserRatingStats(request, response, next) {
     try {
-      const userId = req.params.userId;
+      const userId = request.params.userId;
 
       if (!userId)
-        return res.status(400).json({ message: "user ID is required" });
+        return response.status(400).json({ message: "user ID is required" });
 
       const user = await User.findByPk(userId);
-      if (!user) return res.status(404).json({ message: "User not found" });
+      if (!user)
+        return response.status(404).json({ message: "User not found" });
 
       const ratings = await Rating.findAll({
         where: { rateeId: userId },
       });
 
       if (ratings.length === 0)
-        return res.status(200).json({
+        return response.status(200).json({
           total_ratings: 0,
           average_rating: 0,
           rating_distribution: {
@@ -274,31 +284,31 @@ class RatingController {
         5: 0,
       };
 
-      ratings.forEach((rating) => {
+      for (const rating of ratings) {
         distribution[rating.score.toString()]++;
-      });
+      }
 
-      return res.status(200).json({
+      return response.status(200).json({
         total_ratings: ratings.length,
-        average_rating: parseFloat(averageRating.toFixed(2)),
+        average_rating: Number.parseFloat(averageRating.toFixed(2)),
         rating_distribution: distribution,
       });
-    } catch (err) {
-      return next(err);
+    } catch (error) {
+      return next(error);
     }
   }
 
-  async getOrderRatings(req, res, next) {
+  async getOrderRatings(request, response, next) {
     try {
-      const { orderId, orderType } = req.params;
+      const { orderId, orderType } = request.params;
 
       if (!orderId || !orderType)
-        return res
+        return response
           .status(400)
           .json({ message: "order ID and type are required" });
 
       if (!["CLIENT_ORDER", "ARTISAN_ORDER"].includes(orderType))
-        return res.status(400).json({ message: "invalid order type" });
+        return response.status(400).json({ message: "invalid order type" });
 
       let orderExists = false;
       // converts the fetched order to a boolean to check if it exists
@@ -311,7 +321,7 @@ class RatingController {
       }
 
       if (!orderExists)
-        return res.status(404).json({ message: "Order not found" });
+        return response.status(404).json({ message: "Order not found" });
 
       const ratings = await Rating.findAll({
         where: { orderId, orderType },
@@ -321,9 +331,9 @@ class RatingController {
         ],
       });
 
-      return res.status(200).json({ ratings });
-    } catch (err) {
-      return next(err);
+      return response.status(200).json({ ratings });
+    } catch (error) {
+      return next(error);
     }
   }
 
@@ -340,18 +350,18 @@ class RatingController {
           { averageRating: 0 }, // Explicitly update to 0 when no ratings exist
           { where: { id: userId } }
         );
-        return null;
+        return;
       }
 
       const totalScore = ratings.reduce((sum, rating) => sum + rating.score, 0);
       const averageRating = totalScore / ratings.length;
 
       await User.update(
-        { averageRating: parseFloat(averageRating.toFixed(2)) },
+        { averageRating: Number.parseFloat(averageRating.toFixed(2)) },
         { where: { id: userId } }
       );
-    } catch (err) {
-      console.error("Error updating user average rating:", err);
+    } catch (error) {
+      console.error("Error updating user average rating:", error);
     }
   }
 }

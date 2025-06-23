@@ -1,11 +1,19 @@
+import http from "node:http";
 import express from "express";
 import connectDB from "./config/dbConfig.js";
 import config from "./config/dotenv.js";
+import initializeSocket from "./config/socket.js";
 import middlewares from "./middleware/index.js";
 import routes from "./routes/index.js";
 
-const app = express();
 const PORT = config.port;
+
+const app = express();
+
+// setup the socket connection
+const server = http.createServer(app);
+const io = initializeSocket(server);
+app.set("io", io);
 
 // connect to the database
 connectDB();
@@ -17,20 +25,20 @@ middlewares(app);
 app.use("/", routes);
 
 // 404 Handler
-app.use((_req, res) => {
-  res.status(404).json({ success: false, message: "Route doesn't exist" });
+app.use((_request, response) => {
+  response.status(404).json({ success: false, message: "Route doesn't exist" });
 });
 
 // Global Error Handler
-app.use((err, _req, res, _next) => {
-  console.error(err.stack);
+app.use((error, _request, response) => {
+  console.error(error.stack);
 
   // Default 500 error
-  res.status(500).json({
+  response.status(500).json({
     success: false,
     message: "Something went wrong",
     error:
-      config.nodeEnv === "production" ? "Internal server error" : err.message,
+      config.nodeEnv === "production" ? "Internal server error" : error.message,
   });
 });
 

@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 import errorHandler from "./errorHandler.js";
 import process from "node:process";
 
-export default (app) => {
+const middlewares = (app) => {
   // Security middlewares
   app.use(helmet());
   app.disable("x-powered-by");
@@ -14,13 +14,13 @@ export default (app) => {
   // CORS
   app.use(
     cors({
-      origin: (_origin, callback) => callback(null, true),
+      origin: (_origin, callback) => callback(undefined, true),
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
       allowedHeaders: "*",
       credentials: true,
       optionsSuccessStatus: 200,
       preflightContinue: false,
-    }),
+    })
   );
   // request parsing middlewares
   app.use(express.json({ limit: "1mb" }));
@@ -37,14 +37,18 @@ export default (app) => {
   app.disable("x-powered-by");
 
   // catch-all for JSON syntax errors
-  app.use((err, _req, res, next) => {
-    if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
-      return res.status(400).json({
+  app.use((error, _request, response, next) => {
+    if (
+      error instanceof SyntaxError &&
+      error.status === 400 &&
+      "body" in error
+    ) {
+      return response.status(400).json({
         success: false,
         message: "Invalid JSON in request body",
       });
     }
-    next(err);
+    next(error);
   });
 
   // Error handler must be the last middleware
@@ -52,3 +56,5 @@ export default (app) => {
 
   console.log("applied middlewares");
 };
+
+export default middlewares;
