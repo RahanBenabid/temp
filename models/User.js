@@ -20,9 +20,9 @@ export default (sequelize, DataTypes) => {
       phone: {
         type: DataTypes.STRING,
         validate: {
-          isValidPhone(num) {
+          isValidPhone(number) {
             const phoneValidationRegex = /^(0|\+213)[5-7]\d{8}$/;
-            if (!phoneValidationRegex.test(num)) {
+            if (!phoneValidationRegex.test(number)) {
               throw new Error("Invalid phone number format");
             }
           },
@@ -47,7 +47,7 @@ export default (sequelize, DataTypes) => {
           "CLIENT",
           "ARTISAN",
           "SUPPLIER",
-          "DELIVERY_MAN",
+          "DELIVERY_MAN"
         ),
         defaultValue: "CLIENT",
         allowNull: false,
@@ -63,7 +63,7 @@ export default (sequelize, DataTypes) => {
     },
     {
       timestamps: true,
-    },
+    }
   );
 
   /* HELPER FUNCTIONS */

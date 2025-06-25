@@ -1,5 +1,7 @@
-import http from "node:http";
+import { createServer } from "node:http";
+
 import express from "express";
+
 import connectDB from "./config/dbConfig.js";
 import config from "./config/dotenv.js";
 import initializeSocket from "./config/socket.js";
@@ -11,7 +13,7 @@ const PORT = config.port;
 const app = express();
 
 // setup the socket connection
-const server = http.createServer(app);
+const server = createServer(app);
 const io = initializeSocket(server);
 app.set("io", io);
 
@@ -43,6 +45,6 @@ app.use((error, _request, response) => {
 });
 
 // start the server
-app.listen(PORT, "0.0.0.0", () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on all interfaces:3000");
 });

@@ -1,3 +1,5 @@
+import NotificationService from "./../services/notificationService.js";
+
 import database from "./../models/index.js";
 
 const Project = database.project;
@@ -44,7 +46,22 @@ class ProjectController {
         artisan_id,
       });
 
-      return response.status(201).json(project);
+      // handle the notification using the service
+      const notificationData = {
+        userId: client_id,
+        sender: artisan_id,
+        content: "Votre projet a été créé",
+      };
+      const eventName = "projectCreated";
+
+      const io = request.app.get("io");
+      const notification = await NotificationService.realTimeNotification(
+        notificationData,
+        io,
+        eventName
+      );
+
+      return response.status(201).json({ project, notification });
     } catch (error) {
       return next(error);
     }

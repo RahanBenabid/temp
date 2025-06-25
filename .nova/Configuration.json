@@ -1,0 +1,6 @@
+{
+  "apexskier.typescript.config.formatDocumentOnSave" : "null",
+  "apexskier.typescript.config.userPreferences.includeCompletionsForImportStatements" : true,
+  "apexskier.typescript.config.userPreferences.includeCompletionsForModuleExports" : true,
+  "deno.lint" : true
+}

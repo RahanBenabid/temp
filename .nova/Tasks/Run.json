@@ -1,0 +1,9 @@
+{
+  "actions" : {
+    "run" : {
+      "enabled" : true,
+      "script" : "node server.js"
+    }
+  },
+  "openLogOnRun" : "start"
+}
