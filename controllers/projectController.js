@@ -56,6 +56,7 @@ class ProjectController {
 
       const io = request.app.get("io");
       const notification = await NotificationService.realTimeNotification(
+        userId,
         notificationData,
         io,
         eventName
